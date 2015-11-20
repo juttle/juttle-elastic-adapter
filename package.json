@@ -1,0 +1,34 @@
+{
+  "name": "juttle-elastic-backend",
+  "version": "1.0.0",
+  "description": "A plugin enabling Juttle computations on documents stored in Elastic",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juttle/elastic-backend.git"
+  },
+  "keywords": [
+    "juttle",
+    "elastic"
+  ],
+  "author": "Dave Galbraith",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/juttle/elastic-backend/issues"
+  },
+  "homepage": "https://github.com/juttle/elastic-backend",
+  "dependencies": {
+    "bluebird": "^2.9.30",
+    "bluebird-retry": "^0.5.2",
+    "chai": "^3.4.1",
+    "extendable-base": "^0.3.1",
+    "request": "^2.44.0",
+    "underscore": "^1.8.3"
+  }
+}
