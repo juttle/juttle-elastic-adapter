@@ -11,7 +11,7 @@ npm install juttle-elastic-backend
 
 ## Configuration
 
-The information in the Juttle repository documentation under the `configuration` and `Configuring backends` will help setup a general Juttle Config.
+The information in the Juttle repository documentation under `configuration` and `Configuring backends` will help setup a general Juttle Config.
 
 Configuration for the Elastic backend looks like this:
 ```
