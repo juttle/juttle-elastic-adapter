@@ -7,15 +7,7 @@ var clear_data = require('./elastic-test-utils').clear_logstash_data;
 var check_juttle = juttle_test_utils.check_juttle;
 var generate = juttle_test_utils.generate_sample_data;
 
-var Juttle = require('juttle/lib/runtime').Juttle;
-var Elastic = require('../lib');
-
-var backend = Elastic({
-    address: 'localhost',
-    port: 9200
-}, Juttle);
-
-Juttle.backends.register(backend.name, backend);
+var utils = require('./elastic-test-utils');
 
 describe('elastic write', function() {
     this.timeout(30000);

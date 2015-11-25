@@ -10,21 +10,14 @@ var test_utils = require('./elastic-test-utils');
 var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
 var check_juttle = juttle_test_utils.check_juttle;
 var points = require('./apache-sample');
-var Juttle = require('juttle/lib/runtime').Juttle;
-var Elastic = require('../lib');
-
-var backend = Elastic({
-    address: 'localhost',
-    port: 9200
-}, Juttle);
-
-Juttle.backends.register(backend.name, backend);
-
 var expected_points = points.map(function(pt) {
     var new_pt = _.clone(pt);
     new_pt.time = new Date(new_pt.time).toISOString();
     return new_pt;
 });
+
+// Register the backend
+require('./elastic-test-utils');
 
 describe('elastic source', function() {
     this.timeout(300000);

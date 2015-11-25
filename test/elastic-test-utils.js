@@ -5,6 +5,16 @@ var _ = require('underscore');
 var request = Promise.promisifyAll(require('request'));
 request.async = Promise.promisify(request);
 
+var Juttle = require('juttle/lib/runtime').Juttle;
+var Elastic = require('../lib');
+
+var backend = Elastic({
+    address: 'localhost',
+    port: 9200
+}, Juttle);
+
+Juttle.backends.register(backend.name, backend);
+
 function clear_logstash_data() {
     return request.async({
         url: 'http://localhost:9200/logstash-*',
