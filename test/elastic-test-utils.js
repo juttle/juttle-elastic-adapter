@@ -28,7 +28,7 @@ function verify_import(points) {
         return request.postAsync({
             url: url,
             json: {
-                size: 20000
+                size: 10000
             }
         })
         .spread(function(res, body) {
