@@ -57,7 +57,7 @@ describe('elastic source limits', function() {
     });
 
     it('errors if you try to read too many simultaneous points', function() {
-        var program = 'readx elastic -from :10 years ago: -to :now:';
+        var program = 'readx elastic -from :10 years ago: -to :now: -fetch_size 2 -deep_paging_limit 3';
         return check_juttle({
             program: program
         })
