@@ -9,17 +9,9 @@ var test_utils = require('./elastic-test-utils');
 var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
 var check_juttle = juttle_test_utils.check_juttle;
 var points = require('./apache-sample');
-var Juttle = require('juttle/lib/runtime').Juttle;
-var Elastic = require('../lib');
 
-var backend = Elastic({
-    address: 'localhost',
-    port: 9200,
-    fetch_size: 2,
-    deep_paging_limit: 3
-}, Juttle);
-
-Juttle.backends.register(backend.name, backend);
+// Register the backend
+require('./elastic-test-utils');
 
 var expected_points = points.map(function(pt) {
     var new_pt = _.clone(pt);
@@ -65,7 +57,7 @@ describe('elastic source limits', function() {
     });
 
     it('errors if you try to read too many simultaneous points', function() {
-        var program = 'readx elastic -from :10 years ago: -to :now:';
+        var program = 'readx elastic -from :10 years ago: -to :now: -fetch_size 2 -deep_paging_limit 3';
         return check_juttle({
             program: program
         })

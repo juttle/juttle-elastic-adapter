@@ -10,21 +10,14 @@ var test_utils = require('./elastic-test-utils');
 var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
 var check_juttle = juttle_test_utils.check_juttle;
 var points = require('./apache-sample');
-var Juttle = require('juttle/lib/runtime').Juttle;
-var Elastic = require('../lib');
-
-var backend = Elastic({
-    address: 'localhost',
-    port: 9200
-}, Juttle);
-
-Juttle.backends.register(backend.name, backend);
-
 var expected_points = points.map(function(pt) {
     var new_pt = _.clone(pt);
     new_pt.time = new Date(new_pt.time).toISOString();
     return new_pt;
 });
+
+// Register the backend
+require('./elastic-test-utils');
 
 describe('elastic source', function() {
     this.timeout(300000);
@@ -113,7 +106,7 @@ describe('elastic source', function() {
         });
     });
 
-    it('count', function() {
+    it('counts points', function() {
         var program = 'readx elastic -from :2014-09-17T14:13:42.000Z: -to :2014-09-17T14:13:43.000Z:  | reduce count()';
         return check_juttle({
             program: program
@@ -122,4 +115,19 @@ describe('elastic source', function() {
             expect(result.sinks.table).deep.equal([{count: 3}]);
         });
     });
+
+    it('errors if you write a point without time', function() {
+        var timeless = {value: 1, name: 'dave'};
+
+        var write_program = util.format('emit -points %s | remove time | writex elastic', JSON.stringify([timeless]));
+
+        return check_juttle({
+            program: write_program
+        })
+        .then(function(result) {
+            var message = util.format('invalid point: %s because of missing time', JSON.stringify(timeless));
+            expect(result.errors).deep.equal([message]);
+        });
+    });
+
 });
