@@ -2,6 +2,7 @@ var _ = require('underscore');
 var Promise = require('bluebird');
 var request = Promise.promisifyAll(require('request'));
 request.async = Promise.promisify(request);
+var retry = require('bluebird-retry');
 var expect = require('chai').expect;
 var util = require('util');
 
@@ -9,18 +10,17 @@ var test_utils = require('./elastic-test-utils');
 var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
 var check_juttle = juttle_test_utils.check_juttle;
 var points = require('./apache-sample');
-
-// Register the backend
-require('./elastic-test-utils');
-
 var expected_points = points.map(function(pt) {
     var new_pt = _.clone(pt);
     new_pt.time = new Date(new_pt.time).toISOString();
     return new_pt;
 });
 
-describe('elastic source limits', function() {
-    this.timeout(30000);
+// Register the backend
+require('./elastic-test-utils');
+
+describe('optimization', function() {
+    this.timeout(300000);
 
     before(function() {
         return test_utils.clear_logstash_data()
@@ -40,41 +40,58 @@ describe('elastic source limits', function() {
             });
     });
 
-    it('executes multiple fetches', function() {
-        var start = '2014-09-17T14:13:47.000Z';
-        var end = '2014-09-17T14:14:32.000Z';
-        var program = util.format('readx elastic -from :%s: -to :%s:', start, end);
-        return check_juttle({
-            program: program
-        })
-        .then(function(result) {
-            var expected = expected_points.filter(function(pt) {
-                return pt.time >= start && pt.time < end;
-            });
-
-            test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-        });
-    });
-
-    it('errors if you try to read too many simultaneous points', function() {
-        var program = 'readx elastic -from :10 years ago: -to :now: -fetch_size 2 -deep_paging_limit 3';
-        return check_juttle({
-            program: program
-        })
-        .then(function(result) {
-            expect(result.errors).deep.equal([ 'Cannot fetch more than 3 points with the same timestamp' ]);
-        });
-    });
-
-    it('enforces head across multiple fetches', function() {
-        var program = 'readx elastic -from :10 years ago: -to :now: -fetch_size 2 | head 3';
+    it('optimizes head', function() {
+        var program = 'readx elastic -from :10 years ago: -to :now: | head 3';
         return check_juttle({
             program: program
         })
         .then(function(result) {
             var expected = expected_points.slice(0, 3);
             test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-            expect(result.prog.graph.es_opts).deep.equal({limit: 3, fetch_size: 2});
+            expect(result.prog.graph.es_opts).deep.equal({limit: 3});
+        });
+    });
+
+    it('optimizes head with a nontrivial time filter', function() {
+        var start = '2014-09-17T14:13:43.000Z';
+        var end = '2014-09-17T14:13:46.000Z';
+        var program = util.format('readx elastic -from :%s: -to :%s: | head 2', start, end);
+        return check_juttle({
+            program: program
+        })
+        .then(function(result) {
+            var expected = expected_points.filter(function(pt) {
+                return pt.time >= start && pt.time < end;
+            }).slice(0, 2);
+
+            test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+            expect(result.prog.graph.es_opts).deep.equal({limit: 2});
+        });
+    });
+
+    it('optimizes head with tag filter', function() {
+        var program = 'readx elastic -from :10 years ago: -to :now: clientip = "93.114.45.13" | head 2';
+        return check_juttle({
+            program: program
+        })
+        .then(function(result) {
+            var expected = expected_points.filter(function(pt) {
+                return pt.clientip === '93.114.45.13';
+            }).slice(0, 2);
+
+            test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+            expect(result.prog.graph.es_opts).deep.equal({limit: 2});
+        });
+    });
+
+    it('optimizes head 0 (returns nothing)', function() {
+        var program = 'readx elastic -from :10 years ago: -to :now: | head 0';
+        return check_juttle({
+            program: program
+        })
+        .then(function(result) {
+            expect(result.sinks.table).deep.equal([]);
+            expect(result.prog.graph.es_opts).deep.equal({limit: 0});
         });
     });
 });
