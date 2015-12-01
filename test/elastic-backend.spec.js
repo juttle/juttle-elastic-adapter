@@ -130,4 +130,59 @@ describe('elastic source', function() {
         });
     });
 
+    describe('endpoints', function() {
+        it('reads with -id "a"', function() {
+            var program = 'readx elastic -last :10 years: -id "a"';
+            return check_juttle({
+                program: program
+            })
+            .then(function(result) {
+                test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
+            });
+        });
+
+        it('reads with -id "b", a broken endpoint', function() {
+            var program = 'readx elastic -last :10 years: -id "b"';
+            return check_juttle({
+                program: program
+            })
+            .then(function(result) {
+                expect(result.errors).deep.equal(['connect ECONNREFUSED']);
+            });
+        });
+
+        it('writes with -id "b", a broken endpoint', function() {
+            var program = 'readx elastic -last :10 years: | writex elastic -id "b"';
+            return check_juttle({
+                program: program
+            })
+            .then(function(result) {
+                expect(result.errors).deep.equal(['insertion failed: connect ECONNREFUSED']);
+            });
+        });
+
+        it('errors if you read from nonexistent id', function() {
+            var program = 'readx elastic -last :10 years: -id "bananas"';
+            return check_juttle({
+                program: program
+            })
+            .then(function() {
+                throw new Error('should have failed');
+            })
+            .catch(function(err) {
+                expect(err.message).equal('invalid id: bananas');
+            });
+        });
+
+        it('errors if you write to nonexistent id', function() {
+            var program = 'readx elastic -last :10 years: | writex elastic -id "pajamas"';
+            return check_juttle({
+                program: program
+            })
+            .then(function(result) {
+                expect(result.errors).deep.equal(['invalid id: pajamas']);
+            });
+        });
+    });
+
 });

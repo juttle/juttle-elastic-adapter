@@ -8,10 +8,18 @@ request.async = Promise.promisify(request);
 var Juttle = require('juttle/lib/runtime').Juttle;
 var Elastic = require('../lib');
 
-var backend = Elastic({
+var config = [{
+    id: 'a',
     address: 'localhost',
     port: 9200
-}, Juttle);
+},
+{
+    id: 'b',
+    address: 'localhost',
+    port: 9999 // b's config is botched so we can get errors reading from it
+}];
+
+var backend = Elastic(config, Juttle);
 
 Juttle.backends.register(backend.name, backend);
 
