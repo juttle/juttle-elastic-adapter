@@ -30,7 +30,7 @@ describe('optimization', function() {
                     point_to_write.time /= 1000;
                     return point_to_write;
                 });
-                var program = util.format('emit -points %s | writex elastic', JSON.stringify(points_to_write));
+                var program = util.format('emit -points %s | write elastic', JSON.stringify(points_to_write));
                 return check_juttle({
                     program: program
                 });
@@ -41,7 +41,7 @@ describe('optimization', function() {
     });
 
     it('optimizes head', function() {
-        var program = 'readx elastic -from :10 years ago: -to :now: | head 3';
+        var program = 'read elastic -from :10 years ago: -to :now: | head 3';
         return check_juttle({
             program: program
         })
@@ -55,7 +55,7 @@ describe('optimization', function() {
     it('optimizes head with a nontrivial time filter', function() {
         var start = '2014-09-17T14:13:43.000Z';
         var end = '2014-09-17T14:13:46.000Z';
-        var program = util.format('readx elastic -from :%s: -to :%s: | head 2', start, end);
+        var program = util.format('read elastic -from :%s: -to :%s: | head 2', start, end);
         return check_juttle({
             program: program
         })
@@ -70,7 +70,7 @@ describe('optimization', function() {
     });
 
     it('optimizes head with tag filter', function() {
-        var program = 'readx elastic -from :10 years ago: -to :now: clientip = "93.114.45.13" | head 2';
+        var program = 'read elastic -from :10 years ago: -to :now: clientip = "93.114.45.13" | head 2';
         return check_juttle({
             program: program
         })
@@ -85,7 +85,7 @@ describe('optimization', function() {
     });
 
     it('optimizes head 0 (returns nothing)', function() {
-        var program = 'readx elastic -from :10 years ago: -to :now: | head 0';
+        var program = 'read elastic -from :10 years ago: -to :now: | head 0';
         return check_juttle({
             program: program
         })

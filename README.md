@@ -31,17 +31,17 @@ To connect to an Elasticsearch instance elsewhere, add the appropriate address a
 
 Here's a simple read command:
 ```
-readx elastic -from :1 hour ago: -to :now:
+read elastic -from :1 hour ago: -to :now:
 ```
 
 This will output all points stored in Elastic timestamped with the last hour.
 
 Here's a write:
 ```
-emit -limit 1 | put name="test" | writex elastic
+emit -limit 1 | put name="test" | write elastic
 ```
 
-That will write a point timestamped with the current time, with one field `{name: "test"}`, which you'll then be able to query using `readx elastic`.
+That will write a point timestamped with the current time, with one field `{name: "test"}`, which you'll then be able to query using `read elastic`.
 
 ## Development
 
