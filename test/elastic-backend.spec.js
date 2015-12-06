@@ -30,7 +30,7 @@ describe('elastic source', function() {
                     point_to_write.time /= 1000;
                     return point_to_write;
                 });
-                var program = util.format('emit -points %s | writex elastic', JSON.stringify(points_to_write));
+                var program = util.format('emit -points %s | write elastic', JSON.stringify(points_to_write));
                 return check_juttle({
                     program: program
                 });
@@ -41,7 +41,7 @@ describe('elastic source', function() {
     });
 
     it('reads points from Elastic', function() {
-        var program = 'readx elastic -from :10 years ago: -to :now:';
+        var program = 'read elastic -from :10 years ago: -to :now:';
         return check_juttle({
             program: program
         })
@@ -53,7 +53,7 @@ describe('elastic source', function() {
     it('reads with a nontrivial time filter', function() {
         var start = '2014-09-17T14:13:42.000Z';
         var end = '2014-09-17T14:13:43.000Z';
-        var program = util.format('readx elastic -from :%s: -to :%s:', start, end);
+        var program = util.format('read elastic -from :%s: -to :%s:', start, end);
         return check_juttle({
             program: program
         })
@@ -67,7 +67,7 @@ describe('elastic source', function() {
     });
 
     it('reads with tag filter', function() {
-        var program = 'readx elastic -from :10 years ago: -to :now: clientip = "93.114.45.13"';
+        var program = 'read elastic -from :10 years ago: -to :now: clientip = "93.114.45.13"';
         return check_juttle({
             program: program
         })
@@ -81,7 +81,7 @@ describe('elastic source', function() {
     });
 
     it('reads with free text search', function() {
-        var program = 'readx elastic -from :10 years ago: -to :now: "Ubuntu"';
+        var program = 'read elastic -from :10 years ago: -to :now: "Ubuntu"';
         return check_juttle({
             program: program
         })
@@ -97,7 +97,7 @@ describe('elastic source', function() {
     });
 
     it('reads with -last', function() {
-        var program = 'readx elastic -last :10 years:';
+        var program = 'read elastic -last :10 years:';
         return check_juttle({
             program: program
         })
@@ -107,7 +107,7 @@ describe('elastic source', function() {
     });
 
     it('counts points', function() {
-        var program = 'readx elastic -from :2014-09-17T14:13:42.000Z: -to :2014-09-17T14:13:43.000Z:  | reduce count()';
+        var program = 'read elastic -from :2014-09-17T14:13:42.000Z: -to :2014-09-17T14:13:43.000Z:  | reduce count()';
         return check_juttle({
             program: program
         })
@@ -119,7 +119,7 @@ describe('elastic source', function() {
     it('errors if you write a point without time', function() {
         var timeless = {value: 1, name: 'dave'};
 
-        var write_program = util.format('emit -points %s | remove time | writex elastic', JSON.stringify([timeless]));
+        var write_program = util.format('emit -points %s | remove time | write elastic', JSON.stringify([timeless]));
 
         return check_juttle({
             program: write_program
@@ -132,7 +132,7 @@ describe('elastic source', function() {
 
     describe('endpoints', function() {
         it('reads with -id "a"', function() {
-            var program = 'readx elastic -last :10 years: -id "a"';
+            var program = 'read elastic -last :10 years: -id "a"';
             return check_juttle({
                 program: program
             })
@@ -142,7 +142,7 @@ describe('elastic source', function() {
         });
 
         it('reads with -id "b", a broken endpoint', function() {
-            var program = 'readx elastic -last :10 years: -id "b"';
+            var program = 'read elastic -last :10 years: -id "b"';
             return check_juttle({
                 program: program
             })
@@ -152,7 +152,7 @@ describe('elastic source', function() {
         });
 
         it('writes with -id "b", a broken endpoint', function() {
-            var program = 'readx elastic -last :10 years: | writex elastic -id "b"';
+            var program = 'read elastic -last :10 years: | write elastic -id "b"';
             return check_juttle({
                 program: program
             })
@@ -162,7 +162,7 @@ describe('elastic source', function() {
         });
 
         it('errors if you read from nonexistent id', function() {
-            var program = 'readx elastic -last :10 years: -id "bananas"';
+            var program = 'read elastic -last :10 years: -id "bananas"';
             return check_juttle({
                 program: program
             })
@@ -175,7 +175,7 @@ describe('elastic source', function() {
         });
 
         it('errors if you write to nonexistent id', function() {
-            var program = 'readx elastic -last :10 years: | writex elastic -id "pajamas"';
+            var program = 'read elastic -last :10 years: | write elastic -id "pajamas"';
             return check_juttle({
                 program: program
             })

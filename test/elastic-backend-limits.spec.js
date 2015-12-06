@@ -30,7 +30,7 @@ describe('elastic source limits', function() {
                     point_to_write.time /= 1000;
                     return point_to_write;
                 });
-                var program = util.format('emit -points %s | writex elastic', JSON.stringify(points_to_write));
+                var program = util.format('emit -points %s | write elastic', JSON.stringify(points_to_write));
                 return check_juttle({
                     program: program
                 });
@@ -43,7 +43,7 @@ describe('elastic source limits', function() {
     it('executes multiple fetches', function() {
         var start = '2014-09-17T14:13:47.000Z';
         var end = '2014-09-17T14:14:32.000Z';
-        var program = util.format('readx elastic -from :%s: -to :%s:', start, end);
+        var program = util.format('read elastic -from :%s: -to :%s:', start, end);
         return check_juttle({
             program: program
         })
@@ -57,7 +57,7 @@ describe('elastic source limits', function() {
     });
 
     it('errors if you try to read too many simultaneous points', function() {
-        var program = 'readx elastic -from :10 years ago: -to :now: -fetch_size 2 -deep_paging_limit 3';
+        var program = 'read elastic -from :10 years ago: -to :now: -fetch_size 2 -deep_paging_limit 3';
         return check_juttle({
             program: program
         })
@@ -67,7 +67,7 @@ describe('elastic source limits', function() {
     });
 
     it('enforces head across multiple fetches', function() {
-        var program = 'readx elastic -from :10 years ago: -to :now: -fetch_size 2 | head 3';
+        var program = 'read elastic -from :10 years ago: -to :now: -fetch_size 2 | head 3';
         return check_juttle({
             program: program
         })
