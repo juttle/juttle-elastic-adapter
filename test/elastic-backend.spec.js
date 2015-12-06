@@ -40,6 +40,17 @@ describe('elastic source', function() {
             });
     });
 
+    it('gracefully handles a lack of data', function() {
+        var program = 'read elastic -last :m:';
+        return check_juttle({
+            program: program
+        })
+        .then(function(result) {
+            expect(result.sinks.table).deep.equal([]);
+            expect(result.errors).deep.equal([]);
+        });
+    });
+
     it('reads points from Elastic', function() {
         var program = 'read elastic -from :10 years ago: -to :now:';
         return check_juttle({
