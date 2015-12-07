@@ -1,8 +1,8 @@
 {
   "name": "juttle-elastic-backend",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A plugin enabling Juttle computations on documents stored in Elastic",
-  "main": "index.js",
+  "main": "lib/index.js",
   "directories": {
     "test": "test"
   },
