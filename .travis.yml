@@ -1,0 +1,16 @@
+language: node_js
+
+node_js:
+    - '0.10.36'
+
+services:
+    - elasticsearch
+
+
+before_script:
+    - git clone https://${GITHUB_TOKEN}:x-oauth-basic@github.com/juttle/juttle.git
+    - pushd juttle ; npm install ; npm link ; popd
+
+script:
+    - export NODE_PATH="$(dirname `which node`)/../lib/node_modules"
+    - mocha
