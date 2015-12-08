@@ -7,6 +7,8 @@ request.async = Promise.promisify(request);
 
 var Juttle = require('juttle/lib/runtime').Juttle;
 var Elastic = require('../lib');
+var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
+var check_juttle = juttle_test_utils.check_juttle;
 
 var config = [{
     id: 'a',
@@ -69,8 +71,25 @@ function check_result_vs_expected_sorting_by(received, expected, field) {
     expect(_.sortBy(received, 'bytes')).deep.equal(_.sortBy(expected, field));
 }
 
+// only works on linear flowgraphs
+function check_optimization(juttle) {
+    var read_elastic_length = 'read elastic'.length;
+    var unoptimized_juttle = 'read elastic -optimize false ' + juttle.substring(read_elastic_length);
+    return Promise.map([juttle, unoptimized_juttle], function(program) {
+        return check_juttle({
+            program: program
+        });
+    })
+    .spread(function(optimized, unoptimized) {
+        var opt_data = optimized.sinks.table;
+        var unopt_data = unoptimized.sinks.table;
+        expect(opt_data).deep.equal(unopt_data);
+    });
+}
+
 module.exports = {
     check_result_vs_expected_sorting_by: check_result_vs_expected_sorting_by,
     verify_import: verify_import,
+    check_optimization: check_optimization,
     clear_logstash_data: clear_logstash_data
 };

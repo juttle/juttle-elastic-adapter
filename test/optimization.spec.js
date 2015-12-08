@@ -16,6 +16,9 @@ var expected_points = points.map(function(pt) {
     return new_pt;
 });
 
+var start = new Date(points[0].time).toISOString();
+var end = new Date(_.last(points).time+1).toISOString();
+
 // Register the backend
 require('./elastic-test-utils');
 
@@ -149,6 +152,32 @@ describe('optimization', function() {
                     }
                 });
             });
+        });
+
+        it('optimizes reduce -every count()', function() {
+            var program = util.format('read elastic -from :%s: -to :%s: | reduce -every :s: count()', start, end);
+            return test_utils.check_optimization(program);
+        });
+
+        it('optimizes reduce -every count() by', function() {
+            var program = util.format('read elastic -from :%s: -to :%s: | reduce -every :s: count() by clientip', start, end);
+            return test_utils.check_optimization(program);
+        });
+
+        it('optimizes reduce -every -on count()', function() {
+            var program = util.format('read elastic -from :%s: -to :%s: | reduce -every :s: -on :0.5s: count()', start, end);
+            return test_utils.check_optimization(program);
+        });
+
+        it('optimizes reduce -every -on count() by', function() {
+            var program = util.format('read elastic -from :%s: -to :%s: | reduce -every :s: -on :0.3s: count() by clientip', start, end);
+            return test_utils.check_optimization(program);
+        });
+
+        it('-on a non-duration moment', function() {
+            var on = new Date().toISOString();
+            var program = util.format('read elastic -from :%s: -to :%s: | reduce -every :s: -on :%s: count() by clientip', start, end, on);
+            return test_utils.check_optimization(program);
         });
     });
 });
