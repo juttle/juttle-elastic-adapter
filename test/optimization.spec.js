@@ -16,6 +16,18 @@ var expected_points = points.map(function(pt) {
     return new_pt;
 });
 
+function format_juttle_result_like_es(pts) {
+    pts.forEach(function(pt) {
+        _.each(pt, function nullify_infinities(value, key) {
+            if (value === Infinity || value === -Infinity) {
+                pt[key] = null;
+            }
+        });
+    });
+
+    return pts;
+}
+
 var start = new Date(points[0].time).toISOString();
 var end = new Date(_.last(points).time+1).toISOString();
 
@@ -177,6 +189,44 @@ describe('optimization', function() {
         it('-on a non-duration moment', function() {
             var on = new Date().toISOString();
             var program = util.format('read elastic -from :%s: -to :%s: | reduce -every :s: -on :%s: count() by clientip', start, end, on);
+            return test_utils.check_optimization(program);
+        });
+
+        it('optimizes non-count reducers', function() {
+            var program = util.format('read elastic -from :%s: -to :%s: | reduce sum(bytes), avg(bytes), max(bytes), min(bytes), count_unique(bytes)', start, end);
+            return test_utils.check_optimization(program);
+        });
+
+        it('optimizes non-count reducers -every', function() {
+            var program = util.format('read elastic -from :%s: -to :%s: | reduce -every :s: sum(bytes), avg(bytes), max(bytes), min(bytes), count_unique(bytes)', start, end);
+            return test_utils.check_optimization(program, {
+                massage: format_juttle_result_like_es
+            });
+        });
+
+        it('optimizes non-count reducers -every -on', function() {
+            var program = util.format('read elastic -from :%s: -to :%s: | reduce -every :s: -on :0.2s: sum(bytes), avg(bytes), max(bytes), min(bytes), count_unique(bytes)', start, end);
+            return test_utils.check_optimization(program, {
+                massage: format_juttle_result_like_es
+            });
+        });
+
+        it('optimizes no reducers', function() {
+            var program = util.format('read elastic -from :%s: -to :%s: | reduce by clientip', start, end);
+            return test_utils.check_optimization(program, {
+                massage: function(array) {
+                    return _.sortBy(array, 'clientip');
+                }
+            });
+        });
+
+        it('optimizes no reducers -every', function() {
+            var program = util.format('read elastic -from :%s: -to :%s: | reduce -every :s: by clientip', start, end);
+            return test_utils.check_optimization(program);
+        });
+
+        it('optimizes no reducers -every -on', function() {
+            var program = util.format('read elastic -from :%s: -to :%s: | reduce -every :s: -on :0.4s: by clientip', start, end);
             return test_utils.check_optimization(program);
         });
     });

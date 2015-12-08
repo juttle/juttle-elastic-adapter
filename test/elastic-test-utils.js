@@ -33,7 +33,7 @@ function clear_logstash_data() {
 }
 
 function verify_import(points) {
-    var url = 'http://localhost:9200/_search';
+    var url = 'http://localhost:9200/logstash-*/_search';
     return retry(function() {
         return request.postAsync({
             url: url,
@@ -68,11 +68,12 @@ function check_result_vs_expected_sorting_by(received, expected, field) {
     // so we make sure the result is sorted but verify the right result
     // with another sort
     expect_sorted(received);
-    expect(_.sortBy(received, 'bytes')).deep.equal(_.sortBy(expected, field));
+    expect(_.sortBy(received, field)).deep.equal(_.sortBy(expected, field));
 }
 
 // only works on linear flowgraphs
-function check_optimization(juttle) {
+function check_optimization(juttle, options) {
+    options = options || {};
     var read_elastic_length = 'read elastic'.length;
     var unoptimized_juttle = 'read elastic -optimize false ' + juttle.substring(read_elastic_length);
     return Promise.map([juttle, unoptimized_juttle], function(program) {
@@ -83,6 +84,12 @@ function check_optimization(juttle) {
     .spread(function(optimized, unoptimized) {
         var opt_data = optimized.sinks.table;
         var unopt_data = unoptimized.sinks.table;
+
+        if (options.massage) {
+            opt_data = options.massage(opt_data);
+            unopt_data = options.massage(unopt_data);
+        }
+
         expect(opt_data).deep.equal(unopt_data);
     });
 }
