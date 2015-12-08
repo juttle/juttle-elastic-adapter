@@ -48,7 +48,7 @@ describe('optimization', function() {
         .then(function(result) {
             var expected = expected_points.slice(0, 3);
             test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-            expect(result.prog.graph.es_opts).deep.equal({limit: 3});
+            expect(result.prog.graph.es_opts.limit).equal(3);
         });
     });
 
@@ -65,7 +65,7 @@ describe('optimization', function() {
             }).slice(0, 2);
 
             test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-            expect(result.prog.graph.es_opts).deep.equal({limit: 2});
+            expect(result.prog.graph.es_opts.limit).equal(2);
         });
     });
 
@@ -80,7 +80,7 @@ describe('optimization', function() {
             }).slice(0, 2);
 
             test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-            expect(result.prog.graph.es_opts).deep.equal({limit: 2});
+            expect(result.prog.graph.es_opts.limit).equal(2);
         });
     });
 
@@ -91,7 +91,64 @@ describe('optimization', function() {
         })
         .then(function(result) {
             expect(result.sinks.table).deep.equal([]);
-            expect(result.prog.graph.es_opts).deep.equal({limit: 0});
+            expect(result.prog.graph.es_opts.limit).equal(0);
+        });
+    });
+
+    describe('reduce', function() {
+        it('optimizes count', function() {
+            var program = 'read elastic -from :10 years ago: -to :now: | reduce count()';
+            return check_juttle({
+                program: program
+            })
+            .then(function(result) {
+                var first_node = result.prog.graph.head[0];
+                expect(first_node.procName).equal('elastic_read');
+
+                var second_node = first_node.out_.default[0].proc;
+                expect(second_node.procName).equal('clientsink');
+
+                expect(result.sinks.table).deep.equal([{count: 30}]);
+                expect(result.prog.graph.es_opts.aggregations.count).equal('count');
+            });
+        });
+
+        it('optimizes count with a named reducer', function() {
+            var program = 'read elastic -from :10 years ago: -to :now: | reduce x=count()';
+            return check_juttle({
+                program: program
+            })
+            .then(function(result) {
+                expect(result.sinks.table).deep.equal([{x: 30}]);
+                expect(result.prog.graph.es_opts.aggregations.count).equal('x');
+            });
+        });
+
+        it('optimizes count by', function() {
+            var program = 'read elastic -from :10 years ago: -to :now: | reduce count() by clientip';
+            return check_juttle({
+                program: program
+            })
+            .then(function(result) {
+                expect(result.sinks.table).deep.equal([
+                    {clientip: '83.149.9.216', count: 23},
+                    {clientip: '93.114.45.13', count: 6},
+                    {clientip: '24.236.252.67', count: 1}
+                ]);
+
+                var aggregations = result.prog.graph.es_opts.aggregations;
+
+                expect(aggregations.count).equal('count');
+                expect(aggregations.grouping).deep.equal(['clientip']);
+                expect(aggregations.es_aggr).deep.equal({
+                    group: {
+                        terms: {
+                            field: 'clientip',
+                            size: 1000000
+                        }
+                    }
+                });
+            });
         });
     });
 });
