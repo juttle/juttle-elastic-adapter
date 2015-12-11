@@ -229,5 +229,13 @@ describe('optimization', function() {
             var program = util.format('read elastic -from :%s: -to :%s: | reduce -every :s: -on :0.4s: by clientip', start, end);
             return test_utils.check_optimization(program);
         });
+
+        it('doesn\'t optimize reduce -acc true', function() {
+            var program = util.format('read elastic -from :%s: -to :%s: | reduce -every :s: -acc true by clientip', start, end);
+            return check_juttle({program: program})
+                .then(function(result) {
+                    expect(result.prog.graph.es_opts).deep.equal({ limit: undefined, aggregations: undefined });
+                });
+        });
     });
 });
