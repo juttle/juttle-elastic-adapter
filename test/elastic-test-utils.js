@@ -21,9 +21,9 @@ var config = [{
     port: 9999 // b's config is botched so we can get errors reading from it
 }];
 
-var backend = Elastic(config, Juttle);
+var adapter = Elastic(config, Juttle);
 
-Juttle.backends.register(backend.name, backend);
+Juttle.adapters.register(adapter.name, adapter);
 
 function clear_logstash_data() {
     return request.async({

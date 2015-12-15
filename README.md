@@ -1,22 +1,22 @@
-# Juttle Elastic Backend
+# Juttle Elastic Adapter
 
-The Juttle Elastic Backend enables reading and writing documents using [Elasticsearch](https://www.elastic.co/products/elasticsearch). It supports the [Logstash](https://www.elastic.co/products/logstash) schema, so it can read any documents stored in Elasticsearch by Logstash.
+The Juttle Elastic Adapter enables reading and writing documents using [Elasticsearch](https://www.elastic.co/products/elasticsearch). It supports the [Logstash](https://www.elastic.co/products/logstash) schema, so it can read any documents stored in Elasticsearch by Logstash.
 
 ## Installation
 
 In your Juttle repo, execute:
 ```
-npm install juttle-elastic-backend
+npm install juttle-elastic-adapter
 ```
 
 ## Configuration
 
-The information in the Juttle repository documentation under `configuration` and `Configuring backends` will help setup a general Juttle Config.
+The information in the Juttle repository documentation under `configuration` and `Configuring adapters` will help setup a general Juttle Config.
 
-Configuration for the Elastic backend looks like this:
+Configuration for the Elastic adapter looks like this:
 ```
 {
-    "backends": {
+    "adapters": {
         "elastic": {
             "address": "localhost",
             "port": 9200

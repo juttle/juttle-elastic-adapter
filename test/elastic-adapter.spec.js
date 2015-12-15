@@ -16,7 +16,7 @@ var expected_points = points.map(function(pt) {
     return new_pt;
 });
 
-// Register the backend
+// Register the adapter
 require('./elastic-test-utils');
 
 describe('elastic source', function() {
