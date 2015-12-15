@@ -31,7 +31,7 @@ function format_juttle_result_like_es(pts) {
 var start = new Date(points[0].time).toISOString();
 var end = new Date(_.last(points).time+1).toISOString();
 
-// Register the backend
+// Register the adapter
 require('./elastic-test-utils');
 
 describe('optimization', function() {
