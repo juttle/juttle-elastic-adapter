@@ -27,6 +27,7 @@
     "bluebird": "^2.9.30",
     "bluebird-retry": "^0.5.2",
     "chai": "^3.4.1",
+    "elasticsearch": "^10.0.1",
     "extendable-base": "^0.3.1",
     "request": "^2.44.0",
     "underscore": "^1.8.3"
