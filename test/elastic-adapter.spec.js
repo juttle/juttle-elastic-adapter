@@ -158,7 +158,7 @@ describe('elastic source', function() {
                 program: program
             })
             .then(function(result) {
-                expect(result.errors).deep.equal(['connect ECONNREFUSED']);
+                expect(result.errors).deep.equal(['Failed to connect to Elasticsearch']);
             });
         });
 
@@ -168,7 +168,7 @@ describe('elastic source', function() {
                 program: program
             })
             .then(function(result) {
-                expect(result.errors).deep.equal(['insertion failed: connect ECONNREFUSED']);
+                expect(result.errors).deep.equal(['insertion failed: Failed to connect to Elasticsearch']);
             });
         });
 

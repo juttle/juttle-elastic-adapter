@@ -237,5 +237,15 @@ describe('optimization', function() {
                     expect(result.prog.graph.es_opts).deep.equal({ limit: undefined, aggregations: undefined });
                 });
         });
+
+        // travis doesn't have aggkey.groovy so we can't test this in the CI
+        it.skip('optimizes reduce by with missing fields', function() {
+            var program = util.format('read elastic -from :%s: -to :%s: | reduce count() by clientip, garbage', start, end);
+            return test_utils.check_optimization(program, {
+                massage: function(array) {
+                    return _.sortBy(array, 'clientip');
+                }
+            });
+        });
     });
 });
