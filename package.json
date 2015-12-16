@@ -1,28 +1,16 @@
 {
   "name": "juttle-elastic-adapter",
-  "version": "0.0.1",
-  "description": "A plugin enabling Juttle computations on documents stored in Elastic",
+  "version": "0.1.0",
+  "description": "Juttle adapter for Elasticsearch",
+  "keywords": ["juttle", "adapter", "elasticsearch"],
+  "homepage": "https://github.com/juttle/juttle-elastic-adapter",
+  "bugs": "https://github.com/juttle/juttle-elastic-adapter/issues",
+  "license": "Apache-2.0",
   "main": "lib/index.js",
-  "directories": {
-    "test": "test"
-  },
+  "repository": "juttle/juttle-elastic-adapter",
   "scripts": {
     "test": "mocha"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/juttle/juttle-elastic-adapter.git"
-  },
-  "keywords": [
-    "juttle",
-    "elastic"
-  ],
-  "author": "Dave Galbraith",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/juttle/juttle-elastic-adapter/issues"
-  },
-  "homepage": "https://github.com/juttle/juttle-elastic-adapter/",
   "dependencies": {
     "bluebird": "^2.9.30",
     "bluebird-retry": "^0.5.2",
@@ -35,5 +23,9 @@
   "devDependencies": {
     "chai": "^3.4.1",
     "mocha": "^2.3.4"
+  },
+  "engines": {
+    "node": ">=0.10.40",
+    "npm": ">=2.1.6"
   }
 }
