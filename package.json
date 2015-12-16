@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/juttle/juttle-elastic-adapter/",
   "dependencies": {
+    "aws-es": "^1.5.3",
     "bluebird": "^2.9.30",
     "bluebird-retry": "^0.5.2",
     "chai": "^3.4.1",
