@@ -2,10 +2,7 @@
   "name": "juttle-elastic-adapter",
   "version": "0.0.1",
   "description": "A plugin enabling Juttle computations on documents stored in Elastic",
-  "keywords": [
-    "juttle",
-    "elastic"
-  ],
+  "keywords": ["juttle", "elastic"],
   "homepage": "https://github.com/juttle/juttle-elastic-adapter/",
   "bugs": {
     "url": "https://github.com/juttle/juttle-elastic-adapter/issues"
