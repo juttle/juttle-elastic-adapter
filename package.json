@@ -7,9 +7,6 @@
   "bugs": "https://github.com/juttle/juttle-elastic-adapter/issues",
   "license": "Apache-2.0",
   "main": "lib/index.js",
-  "directories": {
-    "test": "test"
-  },
   "repository": "juttle/juttle-elastic-adapter",
   "scripts": {
     "test": "mocha"
