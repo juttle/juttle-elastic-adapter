@@ -6,7 +6,6 @@
   "homepage": "https://github.com/juttle/juttle-elastic-adapter",
   "bugs": "https://github.com/juttle/juttle-elastic-adapter/issues",
   "license": "Apache-2.0",
-  "author": "Dave Galbraith",
   "main": "lib/index.js",
   "directories": {
     "test": "test"
