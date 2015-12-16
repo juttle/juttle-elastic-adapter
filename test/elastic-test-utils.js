@@ -2,16 +2,34 @@ var Promise = require('bluebird');
 var retry = require('bluebird-retry');
 var expect = require('chai').expect;
 var _ = require('underscore');
-var request = Promise.promisifyAll(require('request'));
-request.async = Promise.promisify(request);
+var Elasticsearch = require('elasticsearch');
+var AmazonElasticsearchClient = require('aws-es');
 
 var Juttle = require('juttle/lib/runtime').Juttle;
 var Elastic = require('../lib');
 var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
 var check_juttle = juttle_test_utils.check_juttle;
 
+var AWS_HOST = 'search-dave-6jy2cskdfaye4ji6gfa6x375ve.us-west-2.es.amazonaws.com';
+var AWS_REGION = 'us-west-2';
+
+var LOCAL = 'local';
+var AWS = 'aws';
+
+var local_client = Promise.promisifyAll(new Elasticsearch.Client({
+    host: 'localhost:9200'
+}));
+
+var aws_client = Promise.promisifyAll(new AmazonElasticsearchClient({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    service: 'es',
+    region: AWS_REGION,
+    host: AWS_HOST
+}));
+
 var config = [{
-    id: 'a',
+    id: LOCAL,
     address: 'localhost',
     port: 9200
 },
@@ -19,29 +37,40 @@ var config = [{
     id: 'b',
     address: 'localhost',
     port: 9999 // b's config is botched so we can get errors reading from it
+},
+{
+    id: AWS,
+    type: 'aws',
+    endpoint: AWS_HOST,
+    region: AWS_REGION
 }];
 
 var adapter = Elastic(config, Juttle);
 
 Juttle.adapters.register(adapter.name, adapter);
 
-function clear_logstash_data() {
-    return request.async({
-        url: 'http://localhost:9200/logstash-*',
-        method: 'DELETE'
-    });
+function clear_logstash_data(type) {
+    if (type === 'aws') {
+        return aws_client.deleteAsync({index: 'logstash-*'});
+    } else {
+        return local_client.indices.delete({index: 'logstash-*'});
+    }
 }
 
-function verify_import(points) {
-    var url = 'http://localhost:9200/logstash-*/_search';
+function verify_import(points, type) {
+    var client = type === 'aws' ? aws_client : local_client;
     return retry(function() {
-        return request.postAsync({
-            url: url,
-            json: {
+        return client.searchAsync({
+            index: 'logstash-*',
+            type: '',
+            body: {
                 size: 10000
             }
         })
-        .spread(function(res, body) {
+        .then(function(body) {
+            if (Array.isArray(body)) {
+                body = body[0];
+            }
             var received = body.hits.hits.map(function(doc) {
                 return doc._source;
             });
@@ -95,6 +124,7 @@ function check_optimization(juttle, options) {
 }
 
 module.exports = {
+    default_types: [LOCAL, AWS],
     check_result_vs_expected_sorting_by: check_result_vs_expected_sorting_by,
     verify_import: verify_import,
     check_optimization: check_optimization,
