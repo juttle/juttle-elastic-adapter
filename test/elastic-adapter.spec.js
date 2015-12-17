@@ -19,139 +19,135 @@ var expected_points = points.map(function(pt) {
 // Register the adapter
 require('./elastic-test-utils');
 
+var types = process.env.TESTMODE ? [process.env.TESTMODE] : test_utils.default_types;
+
 describe('elastic source', function() {
     this.timeout(300000);
+    types.forEach(function(type) {
+        describe('basic functionality -- ' + type, function() {
+            before(function() {
+                return test_utils.clear_logstash_data(type)
+                    .then(function() {
+                        var points_to_write = points.map(function(point) {
+                            var point_to_write = _.clone(point);
+                            point_to_write.time /= 1000;
+                            return point_to_write;
+                        });
+                        var program = util.format('emit -points %s | write elastic -id "%s"', JSON.stringify(points_to_write), type);
+                        return check_juttle({
+                            program: program
+                        });
+                    })
+                    .then(function(res) {
+                        expect(res.errors).deep.equal([]);
+                        return test_utils.verify_import(points, type);
+                    });
+            });
 
-    before(function() {
-        return test_utils.clear_logstash_data()
-            .then(function() {
-                var points_to_write = points.map(function(point) {
-                    var point_to_write = _.clone(point);
-                    point_to_write.time /= 1000;
-                    return point_to_write;
-                });
-                var program = util.format('emit -points %s | write elastic', JSON.stringify(points_to_write));
+            it('gracefully handles a lack of data', function() {
+                var program = util.format('read elastic -last :m: -id "%s"', type);
                 return check_juttle({
                     program: program
-                });
-            })
-            .then(function() {
-                return test_utils.verify_import(points);
-            });
-    });
-
-    it('gracefully handles a lack of data', function() {
-        var program = 'read elastic -last :m:';
-        return check_juttle({
-            program: program
-        })
-        .then(function(result) {
-            expect(result.sinks.table).deep.equal([]);
-            expect(result.errors).deep.equal([]);
-        });
-    });
-
-    it('reads points from Elastic', function() {
-        var program = 'read elastic -from :10 years ago: -to :now:';
-        return check_juttle({
-            program: program
-        })
-        .then(function(result) {
-            test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
-        });
-    });
-
-    it('reads with a nontrivial time filter', function() {
-        var start = '2014-09-17T14:13:42.000Z';
-        var end = '2014-09-17T14:13:43.000Z';
-        var program = util.format('read elastic -from :%s: -to :%s:', start, end);
-        return check_juttle({
-            program: program
-        })
-        .then(function(result) {
-            var expected = expected_points.filter(function(pt) {
-                return pt.time >= start && pt.time < end;
-            });
-
-            test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-        });
-    });
-
-    it('reads with tag filter', function() {
-        var program = 'read elastic -from :10 years ago: -to :now: clientip = "93.114.45.13"';
-        return check_juttle({
-            program: program
-        })
-        .then(function(result) {
-            var expected = expected_points.filter(function(pt) {
-                return pt.clientip === '93.114.45.13';
-            });
-
-            test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-        });
-    });
-
-    it('reads with free text search', function() {
-        var program = 'read elastic -from :10 years ago: -to :now: "Ubuntu"';
-        return check_juttle({
-            program: program
-        })
-        .then(function(result) {
-            var expected = expected_points.filter(function(pt) {
-                return _.any(pt, function(value, key) {
-                    return typeof value === 'string' && value.match(/Ubuntu/);
+                })
+                .then(function(result) {
+                    expect(result.sinks.table).deep.equal([]);
+                    expect(result.errors).deep.equal([]);
                 });
             });
 
-            test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-        });
-    });
+            it('reads points from Elastic', function() {
+                var program = util.format('read elastic -from :10 years ago: -to :now: -id "%s"', type);
+                return check_juttle({
+                    program: program
+                })
+                .then(function(result) {
+                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
+                });
+            });
 
-    it('reads with -last', function() {
-        var program = 'read elastic -last :10 years:';
-        return check_juttle({
-            program: program
-        })
-        .then(function(result) {
-            test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
-        });
-    });
+            it('reads with a nontrivial time filter', function() {
+                var start = '2014-09-17T14:13:42.000Z';
+                var end = '2014-09-17T14:13:43.000Z';
+                var program = util.format('read elastic -from :%s: -to :%s: -id "%s"', start, end, type);
+                return check_juttle({
+                    program: program
+                })
+                .then(function(result) {
+                    var expected = expected_points.filter(function(pt) {
+                        return pt.time >= start && pt.time < end;
+                    });
 
-    it('counts points', function() {
-        var program = 'read elastic -from :2014-09-17T14:13:42.000Z: -to :2014-09-17T14:13:43.000Z:  | reduce count()';
-        return check_juttle({
-            program: program
-        })
-        .then(function(result) {
-            expect(result.sinks.table).deep.equal([{count: 3}]);
-        });
-    });
+                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                });
+            });
 
-    it('errors if you write a point without time', function() {
-        var timeless = {value: 1, name: 'dave'};
+            it('reads with tag filter', function() {
+                var program = util.format('read elastic -from :10 years ago: -to :now: -id "%s" clientip = "93.114.45.13"', type);
+                return check_juttle({
+                    program: program
+                })
+                .then(function(result) {
+                    var expected = expected_points.filter(function(pt) {
+                        return pt.clientip === '93.114.45.13';
+                    });
 
-        var write_program = util.format('emit -points %s | remove time | write elastic', JSON.stringify([timeless]));
+                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                });
+            });
 
-        return check_juttle({
-            program: write_program
-        })
-        .then(function(result) {
-            var message = util.format('invalid point: %s because of missing time', JSON.stringify(timeless));
-            expect(result.errors).deep.equal([message]);
+            it('reads with free text search', function() {
+                var program = util.format('read elastic -from :10 years ago: -to :now: -id "%s" "Ubuntu"', type);
+                return check_juttle({
+                    program: program
+                })
+                .then(function(result) {
+                    var expected = expected_points.filter(function(pt) {
+                        return _.any(pt, function(value, key) {
+                            return typeof value === 'string' && value.match(/Ubuntu/);
+                        });
+                    });
+
+                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                });
+            });
+
+            it('reads with -last', function() {
+                var program = util.format('read elastic -last :10 years: -id "%s"', type);
+                return check_juttle({
+                    program: program
+                })
+                .then(function(result) {
+                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
+                });
+            });
+
+            it('counts points', function() {
+                var program = util.format('read elastic -from :2014-09-17T14:13:42.000Z: -to :2014-09-17T14:13:43.000Z: -id "%s" | reduce count()', type);
+                return check_juttle({
+                    program: program
+                })
+                .then(function(result) {
+                    expect(result.sinks.table).deep.equal([{count: 3}]);
+                });
+            });
+
+            it('errors if you write a point without time', function() {
+                var timeless = {value: 1, name: 'dave'};
+
+                var write_program = util.format('emit -points %s | remove time | write elastic -id "%s"', JSON.stringify([timeless]), type);
+
+                return check_juttle({
+                    program: write_program
+                })
+                .then(function(result) {
+                    var message = util.format('invalid point: %s because of missing time', JSON.stringify(timeless));
+                    expect(result.errors).deep.equal([message]);
+                });
+            });
         });
     });
 
     describe('endpoints', function() {
-        it('reads with -id "a"', function() {
-            var program = 'read elastic -last :10 years: -id "a"';
-            return check_juttle({
-                program: program
-            })
-            .then(function(result) {
-                test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
-            });
-        });
-
         it('reads with -id "b", a broken endpoint', function() {
             var program = 'read elastic -last :10 years: -id "b"';
             return check_juttle({
@@ -195,5 +191,4 @@ describe('elastic source', function() {
             });
         });
     });
-
 });
