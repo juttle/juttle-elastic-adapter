@@ -1,12 +1,25 @@
 language: node_js
 
+cache:
+  directories:
+    - node_modules
+
+addons:
+  apt:
+    sources:
+        - ubuntu-toolchain-r-test
+    packages:
+        - g++-4.8
+
+before_install:
+  - export CXX="g++-4.8"
+
 node_js:
     - '4.2'
     - '5.0'
 
 services:
     - elasticsearch
-
 
 before_script:
     - git clone https://${GITHUB_TOKEN}:x-oauth-basic@github.com/juttle/juttle.git
