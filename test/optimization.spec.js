@@ -142,6 +142,17 @@ describe('optimization', function() {
                     return test_utils.check_optimization(start, end, type, '| reduce -every :s: count()');
                 });
 
+                it('optimizes reduce -every count() -optimized_request_concurrency 1', function() {
+                    return test_utils.check_optimization(start, end, type, '-optimized_request_concurrency 1 | reduce -every :s: count()');
+                });
+
+                it('optimizes reduce -every count() -optimized_request_concurrency 5', function() {
+                    return test_utils.check_optimization(start, end, type, '-optimized_request_concurrency 5 | reduce -every :s: count()');
+                });
+                it('optimizes reduce -every count() -optimized_request_concurrency 100', function() {
+                    return test_utils.check_optimization(start, end, type, '-optimized_request_concurrency 100 | reduce -every :s: count()');
+                });
+
                 it('optimizes reduce -every count() by', function() {
                     return test_utils.check_optimization(start, end, type, '| reduce -every :s: count() by clientip');
                 });
