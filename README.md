@@ -1,5 +1,7 @@
 # Juttle Elastic Adapter
 
+[![Build Status](https://travis-ci.org/juttle/juttle-elastic-adapter.svg)](https://travis-ci.org/juttle/juttle-elastic-adapter)
+
 The Juttle Elastic Adapter enables reading and writing documents using [Elasticsearch](https://www.elastic.co/products/elasticsearch). It supports the [Logstash](https://www.elastic.co/products/logstash) schema, so it can read any documents stored in Elasticsearch by Logstash.
 
 ## Examples
