@@ -12,7 +12,7 @@ addons:
         - g++-4.8
 
 before_install:
-  - export CXX="g++-4.8"
+    - export CXX="g++-4.8"
 
 node_js:
     - '4.2'
@@ -22,9 +22,7 @@ services:
     - elasticsearch
 
 before_script:
-    - git clone https://${GITHUB_TOKEN}:x-oauth-basic@github.com/juttle/juttle.git
-    - pushd juttle ; npm install ; npm link ; popd
+    - npm install juttle
 
 script:
-    - export NODE_PATH="$(dirname `which node`)/../lib/node_modules"
     - mocha
