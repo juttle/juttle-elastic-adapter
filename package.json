@@ -21,6 +21,9 @@
     "request": "^2.44.0",
     "underscore": "^1.8.3"
   },
+  "peerDependencies": {
+      "juttle": "0.1.x"
+  },
   "devDependencies": {
     "chai": "^3.4.1",
     "mocha": "^2.3.4"

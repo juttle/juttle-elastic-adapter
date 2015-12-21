@@ -22,7 +22,7 @@ services:
     - elasticsearch
 
 before_script:
-    - npm install juttle
+    - npm install juttle@0.1.x
 
 script:
     - mocha
