@@ -19,11 +19,11 @@ var expected_points = points.map(function(pt) {
 // Register the adapter
 require('./elastic-test-utils');
 
-var types = process.env.TESTMODE ? [process.env.TESTMODE] : test_utils.default_types;
+var modes = test_utils.modes;
 
 describe('elastic source', function() {
     this.timeout(300000);
-    types.forEach(function(type) {
+    modes.forEach(function(type) {
         describe('basic functionality -- ' + type, function() {
             before(function() {
                 return test_utils.clear_logstash_data(type)

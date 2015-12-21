@@ -34,12 +34,12 @@ var end = new Date(_.last(points).time+1).toISOString();
 // Register the adapter
 require('./elastic-test-utils');
 
-var types = process.env.TESTMODE ? [process.env.TESTMODE] : test_utils.default_types;
+var modes = test_utils.modes;
 
 describe('optimization', function() {
     this.timeout(300000);
 
-    types.forEach(function(type) {
+    modes.forEach(function(type) {
         describe(type, function() {
             before(function() {
                 return test_utils.clear_logstash_data(type)
