@@ -15,7 +15,6 @@ before_install:
     - export CXX="g++-4.8"
 
 node_js:
-    - '4.2'
     - '5.0'
 
 services:
@@ -23,6 +22,9 @@ services:
 
 before_script:
     - npm install juttle@0.1.x
+    - npm install -g jshint
+    - npm install -g jscs
 
 script:
-    - mocha
+    - npm run -s lint
+    - npm test

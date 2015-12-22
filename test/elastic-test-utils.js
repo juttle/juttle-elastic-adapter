@@ -88,7 +88,7 @@ function verify_import(points, type) {
             points.forEach(function(point) {
                 var expected = _.clone(point);
                 expected.time = new Date(expected.time).toISOString();
-                expect(_.findWhere(received, expected)).exist;
+                expect(_.findWhere(received, expected)).exist; // jshint ignore:line
             });
         });
     }, {max_tries: 10});
