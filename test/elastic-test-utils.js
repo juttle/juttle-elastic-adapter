@@ -16,6 +16,16 @@ var AWS_REGION = 'us-west-2';
 var LOCAL = 'local';
 var AWS = 'aws';
 
+var mode = process.env.TESTMODE;
+var modes;
+if (mode === 'all') {
+    modes = [LOCAL, AWS];
+} else if (mode === 'aws') {
+    modes = [AWS];
+} else {
+    modes = [LOCAL];
+}
+
 var local_client = Promise.promisifyAll(new Elasticsearch.Client({
     host: 'localhost:9200'
 }));
@@ -78,7 +88,7 @@ function verify_import(points, type) {
             points.forEach(function(point) {
                 var expected = _.clone(point);
                 expected.time = new Date(expected.time).toISOString();
-                expect(_.findWhere(received, expected)).exist;
+                expect(_.findWhere(received, expected)).exist; // jshint ignore:line
             });
         });
     }, {max_tries: 10});
@@ -124,7 +134,7 @@ function check_optimization(juttle, options) {
 }
 
 module.exports = {
-    default_types: [LOCAL, AWS],
+    modes: modes,
     check_result_vs_expected_sorting_by: check_result_vs_expected_sorting_by,
     verify_import: verify_import,
     check_optimization: check_optimization,

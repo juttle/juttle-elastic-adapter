@@ -19,12 +19,12 @@ var expected_points = points.map(function(pt) {
     return new_pt;
 });
 
-var types = process.env.TESTMODE ? [process.env.TESTMODE] : test_utils.default_types;
+var modes = test_utils.modes;
 
 describe('elastic source limits', function() {
     this.timeout(30000);
 
-    types.forEach(function(type) {
+    modes.forEach(function(type) {
         describe(type, function() {
             before(function() {
                 return test_utils.clear_logstash_data(type)

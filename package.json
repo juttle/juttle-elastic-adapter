@@ -9,7 +9,10 @@
   "main": "lib/index.js",
   "repository": "juttle/juttle-elastic-adapter",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "jshint": "jshint **/*.js",
+    "style": "jscs **/*.js",
+    "lint": "npm run jshint & npm run style"
   },
   "dependencies": {
     "aws-es": "juttle/aws-es.git",
@@ -20,6 +23,9 @@
     "extendable-base": "^0.3.1",
     "request": "^2.44.0",
     "underscore": "^1.8.3"
+  },
+  "peerDependencies": {
+      "juttle": "0.1.x"
   },
   "devDependencies": {
     "chai": "^3.4.1",
