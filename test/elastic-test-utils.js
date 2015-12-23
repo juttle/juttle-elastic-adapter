@@ -30,16 +30,9 @@ var local_client = Promise.promisifyAll(new Elasticsearch.Client({
     host: 'localhost:9200'
 }));
 
-var aws_client = Promise.promisifyAll(new AmazonElasticsearchClient({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    service: 'es',
-    region: AWS_REGION,
-    host: AWS_HOST
-}));
-
 var test_index_prefix = 'my_index_prefix';
 var has_index_id = 'has_default_index';
+
 var config = [{
     id: LOCAL,
     address: 'localhost',
@@ -51,18 +44,30 @@ var config = [{
     port: 9999 // b's config is botched so we can get errors reading from it
 },
 {
-    id: AWS,
-    type: 'aws',
-    endpoint: AWS_HOST,
-    region: AWS_REGION
-},
-{
     id: has_index_id,
     address: 'localhost',
     port: 9200,
     index_prefix: test_index_prefix
 }
 ];
+
+var aws_client;
+if (_.contains(modes, AWS)) {
+    aws_client = Promise.promisifyAll(new AmazonElasticsearchClient({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        service: 'es',
+        region: AWS_REGION,
+        host: AWS_HOST
+    }));
+
+    config.push({
+        id: AWS,
+        type: 'aws',
+        endpoint: AWS_HOST,
+        region: AWS_REGION
+    });
+}
 
 var adapter = Elastic(config, Juttle);
 
