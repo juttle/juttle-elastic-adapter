@@ -24,31 +24,27 @@ var modes = test_utils.modes;
 describe('elastic source', function() {
     this.timeout(300000);
     modes.forEach(function(type) {
+        after(function() {
+            return test_utils.clear_data(type);
+        });
+
         describe('basic functionality -- ' + type, function() {
             before(function() {
-                return test_utils.clear_data(type)
-                    .then(function() {
-                        var points_to_write = points.map(function(point) {
-                            var point_to_write = _.clone(point);
-                            point_to_write.time /= 1000;
-                            return point_to_write;
-                        });
-                        var program = util.format('emit -points %s | write elastic -id "%s"', JSON.stringify(points_to_write), type);
-                        return check_juttle({
-                            program: program
-                        });
-                    })
-                    .then(function(res) {
-                        expect(res.errors).deep.equal([]);
-                        return test_utils.verify_import(points, type);
-                    });
+                var points_to_write = points.map(function(point) {
+                    var point_to_write = _.clone(point);
+                    point_to_write.time /= 1000;
+                    return point_to_write;
+                });
+
+                return test_utils.write(points_to_write, type)
+                .then(function(res) {
+                    expect(res.errors).deep.equal([]);
+                    return test_utils.verify_import(points, type);
+                });
             });
 
             it('gracefully handles a lack of data', function() {
-                var program = util.format('read elastic -last :m: -id "%s"', type);
-                return check_juttle({
-                    program: program
-                })
+                return test_utils.read('1 minute ago', 'now', type)
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([]);
                     expect(result.errors).deep.equal([]);
@@ -56,10 +52,7 @@ describe('elastic source', function() {
             });
 
             it('reads points from Elastic', function() {
-                var program = util.format('read elastic -from :10 years ago: -to :now: -id "%s"', type);
-                return check_juttle({
-                    program: program
-                })
+                return test_utils.read_all(type)
                 .then(function(result) {
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
                 });
@@ -68,10 +61,7 @@ describe('elastic source', function() {
             it('reads with a nontrivial time filter', function() {
                 var start = '2014-09-17T14:13:42.000Z';
                 var end = '2014-09-17T14:13:43.000Z';
-                var program = util.format('read elastic -from :%s: -to :%s: -id "%s"', start, end, type);
-                return check_juttle({
-                    program: program
-                })
+                return test_utils.read(start, end, type)
                 .then(function(result) {
                     var expected = expected_points.filter(function(pt) {
                         return pt.time >= start && pt.time < end;
@@ -82,10 +72,7 @@ describe('elastic source', function() {
             });
 
             it('reads with tag filter', function() {
-                var program = util.format('read elastic -from :10 years ago: -to :now: -id "%s" clientip = "93.114.45.13"', type);
-                return check_juttle({
-                    program: program
-                })
+                return test_utils.read_all(type, 'clientip = "93.114.45.13"')
                 .then(function(result) {
                     var expected = expected_points.filter(function(pt) {
                         return pt.clientip === '93.114.45.13';
@@ -96,10 +83,7 @@ describe('elastic source', function() {
             });
 
             it('reads with free text search', function() {
-                var program = util.format('read elastic -from :10 years ago: -to :now: -id "%s" "Ubuntu"', type);
-                return check_juttle({
-                    program: program
-                })
+                return test_utils.read_all(type, '"Ubuntu"')
                 .then(function(result) {
                     var expected = expected_points.filter(function(pt) {
                         return _.any(pt, function(value, key) {
@@ -112,7 +96,7 @@ describe('elastic source', function() {
             });
 
             it('reads with -last', function() {
-                var program = util.format('read elastic -last :10 years: -id "%s"', type);
+                var program = util.format('read elastic -last :10 years: -id "%s" -index_prefix "%s"', type, test_utils.test_id);
                 return check_juttle({
                     program: program
                 })
@@ -122,10 +106,9 @@ describe('elastic source', function() {
             });
 
             it('counts points', function() {
-                var program = util.format('read elastic -from :2014-09-17T14:13:42.000Z: -to :2014-09-17T14:13:43.000Z: -id "%s" | reduce count()', type);
-                return check_juttle({
-                    program: program
-                })
+                var start = '2014-09-17T14:13:42.000Z';
+                var end = '2014-09-17T14:13:43.000Z';
+                return test_utils.read(start, end, type, ' | reduce count()')
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([{count: 3}]);
                 });
@@ -149,30 +132,21 @@ describe('elastic source', function() {
 
     describe('endpoints', function() {
         it('reads with -id "b", a broken endpoint', function() {
-            var program = 'read elastic -last :10 years: -id "b"';
-            return check_juttle({
-                program: program
-            })
+            return test_utils.read_all('b')
             .then(function(result) {
                 expect(result.errors).deep.equal(['Failed to connect to Elasticsearch']);
             });
         });
 
         it('writes with -id "b", a broken endpoint', function() {
-            var program = 'read elastic -last :10 years: | write elastic -id "b"';
-            return check_juttle({
-                program: program
-            })
+            return test_utils.write([{}], 'b')
             .then(function(result) {
                 expect(result.errors).deep.equal(['insertion failed: Failed to connect to Elasticsearch']);
             });
         });
 
         it('errors if you read from nonexistent id', function() {
-            var program = 'read elastic -last :10 years: -id "bananas"';
-            return check_juttle({
-                program: program
-            })
+            return test_utils.read_all('bananas')
             .then(function() {
                 throw new Error('should have failed');
             })
@@ -182,10 +156,7 @@ describe('elastic source', function() {
         });
 
         it('errors if you write to nonexistent id', function() {
-            var program = 'read elastic -last :10 years: | write elastic -id "pajamas"';
-            return check_juttle({
-                program: program
-            })
+            return test_utils.write([{}], 'pajamas')
             .then(function(result) {
                 expect(result.errors).deep.equal(['invalid id: pajamas']);
             });
