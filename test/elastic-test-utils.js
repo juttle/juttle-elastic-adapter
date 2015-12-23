@@ -4,14 +4,18 @@ var expect = require('chai').expect;
 var _ = require('underscore');
 var Elasticsearch = require('elasticsearch');
 var AmazonElasticsearchClient = require('aws-es');
+var uuid = require('uuid');
+var util = require('util');
 
 var Juttle = require('juttle/lib/runtime').Juttle;
 var Elastic = require('../lib');
 var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
+
 var check_juttle = juttle_test_utils.check_juttle;
 
 var AWS_HOST = 'search-dave-6jy2cskdfaye4ji6gfa6x375ve.us-west-2.es.amazonaws.com';
 var AWS_REGION = 'us-west-2';
+var TEST_RUN_ID = uuid.v4().substring(0, 8);
 
 var LOCAL = 'local';
 var AWS = 'aws';
@@ -30,13 +34,8 @@ var local_client = Promise.promisifyAll(new Elasticsearch.Client({
     host: 'localhost:9200'
 }));
 
-var aws_client = Promise.promisifyAll(new AmazonElasticsearchClient({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    service: 'es',
-    region: AWS_REGION,
-    host: AWS_HOST
-}));
+var test_index_prefix = 'my_index_prefix';
+var has_index_id = 'has_default_index';
 
 var config = [{
     id: LOCAL,
@@ -49,29 +48,71 @@ var config = [{
     port: 9999 // b's config is botched so we can get errors reading from it
 },
 {
-    id: AWS,
-    type: 'aws',
-    endpoint: AWS_HOST,
-    region: AWS_REGION
-}];
+    id: has_index_id,
+    address: 'localhost',
+    port: 9200,
+    index_prefix: test_index_prefix
+}
+];
+
+var aws_client;
+if (_.contains(modes, AWS)) {
+    aws_client = Promise.promisifyAll(new AmazonElasticsearchClient({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        service: 'es',
+        region: AWS_REGION,
+        host: AWS_HOST
+    }));
+
+    config.push({
+        id: AWS,
+        type: 'aws',
+        endpoint: AWS_HOST,
+        region: AWS_REGION
+    });
+}
 
 var adapter = Elastic(config, Juttle);
 
 Juttle.adapters.register(adapter.name, adapter);
 
-function clear_logstash_data(type) {
+function write(points, id) {
+    var program = 'emit -points %s | write elastic -id "%s" -index_prefix "%s"';
+    var write_program = util.format(program, JSON.stringify(points), id, TEST_RUN_ID);
+
+    return check_juttle({
+        program: write_program
+    });
+}
+
+function read(start, end, id, extra) {
+    var program = 'read elastic -from :%s: -to :%s: -id "%s" -index_prefix "%s" %s';
+    var read_program = util.format(program, start, end, id, TEST_RUN_ID, extra || '');
+
+    return check_juttle({
+        program: read_program
+    });
+}
+
+function read_all(type, extra) {
+    return read('10 years ago', 'now', type, extra);
+}
+
+function clear_data(type, indexes) {
+    indexes = indexes || TEST_RUN_ID + '*';
     if (type === 'aws') {
-        return aws_client.deleteAsync({index: 'logstash-*'});
+        return aws_client.deleteAsync({index: indexes});
     } else {
-        return local_client.indices.delete({index: 'logstash-*'});
+        return local_client.indices.delete({index: indexes});
     }
 }
 
-function verify_import(points, type) {
+function verify_import(points, type, indexes) {
     var client = type === 'aws' ? aws_client : local_client;
     return retry(function() {
         return client.searchAsync({
-            index: 'logstash-*',
+            index: indexes || TEST_RUN_ID + '*',
             type: '',
             body: {
                 size: 10000
@@ -111,15 +152,14 @@ function check_result_vs_expected_sorting_by(received, expected, field) {
 }
 
 // only works on linear flowgraphs
-function check_optimization(juttle, options) {
+function check_optimization(start, end, id, extra, options) {
     options = options || {};
-    var read_elastic_length = 'read elastic'.length;
-    var unoptimized_juttle = 'read elastic -optimize false ' + juttle.substring(read_elastic_length);
-    return Promise.map([juttle, unoptimized_juttle], function(program) {
-        return check_juttle({
-            program: program
-        });
-    })
+    extra = extra || '';
+    var unoptimized_extra = '-optimize false ' + extra;
+    return Promise.all([
+        read(start, end, id, extra),
+        read(start, end, id, unoptimized_extra)
+    ])
     .spread(function(optimized, unoptimized) {
         var opt_data = optimized.sinks.table;
         var unopt_data = unoptimized.sinks.table;
@@ -133,10 +173,24 @@ function check_optimization(juttle, options) {
     });
 }
 
+function list_indices() {
+    return local_client.indices.getAliases()
+        .then(function(result) {
+            return Object.keys(result);
+        });
+}
+
 module.exports = {
+    read: read,
+    read_all: read_all,
+    write: write,
     modes: modes,
     check_result_vs_expected_sorting_by: check_result_vs_expected_sorting_by,
     verify_import: verify_import,
     check_optimization: check_optimization,
-    clear_logstash_data: clear_logstash_data
+    clear_data: clear_data,
+    list_indices: list_indices,
+    test_index_prefix: test_index_prefix,
+    has_index_id: has_index_id,
+    test_id: TEST_RUN_ID,
 };
