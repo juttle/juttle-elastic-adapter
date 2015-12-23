@@ -26,7 +26,7 @@ describe('elastic source', function() {
     modes.forEach(function(type) {
         describe('basic functionality -- ' + type, function() {
             before(function() {
-                return test_utils.clear_logstash_data(type)
+                return test_utils.clear_data(type)
                     .then(function() {
                         var points_to_write = points.map(function(point) {
                             var point_to_write = _.clone(point);
@@ -189,6 +189,72 @@ describe('elastic source', function() {
             .then(function(result) {
                 expect(result.errors).deep.equal(['invalid id: pajamas']);
             });
+        });
+    });
+
+    describe('-index argument', function() {
+        var test_index = 'test';
+
+        after(function() {
+            var indexes = util.format('%s*,%s*', test_index, test_utils.test_index_prefix);
+            return test_utils.clear_data(null, indexes);
+        });
+
+        it('read - no such index', function() {
+            var program = 'read elastic -last :10 years: -index_prefix "no_such_index"';
+            return check_juttle({
+                program: program
+            })
+            .then(function(result) {
+                expect(result.sinks.table).deep.equal([]);
+                expect(result.errors).deep.equal([]);
+            });
+        });
+
+        it('writes and reads a specified index', function() {
+            var point = {
+                time: new Date().toISOString(),
+                test: '-index_prefix'
+            };
+            var write_program = util.format('emit -points %s | write elastic -index_prefix "%s"', JSON.stringify([point]), test_index);
+            return check_juttle({
+                program: write_program
+            })
+            .then(function() {
+                var read_program = util.format('read elastic -last :10 years: -index_prefix "%s"', test_index);
+                return retry(function() {
+                    return check_juttle({
+                        program: read_program
+                    })
+                    .then(function(result) {
+                        expect(result.sinks.table).deep.equal([point]);
+                    });
+                }, {max_tries: 10});
+            });
+        });
+
+        it('uses a different default if one is configured', function() {
+            var index_regex = new RegExp(test_utils.test_index_prefix);
+            var point = {
+                time: new Date().toISOString(),
+                test: 'custom_prefix'
+            };
+            return test_utils.list_indices()
+                .then(function(indices) {
+                    expect(indices).not.match(index_regex);
+                })
+                .then(function() {
+                    var write_program = util.format('emit -points %s | write elastic -id "%s"', JSON.stringify([point]), test_utils.has_index_id);
+                    return check_juttle({
+                        program: write_program
+                    });
+                })
+                .then(function() {
+                    return test_utils.list_indices();
+                })
+                .then(function(indices) {
+                    expect(indices).match(index_regex);
+                });
         });
     });
 });

@@ -27,7 +27,7 @@ describe('elastic source limits', function() {
     modes.forEach(function(type) {
         describe(type, function() {
             before(function() {
-                return test_utils.clear_logstash_data(type)
+                return test_utils.clear_data(type)
                     .then(function() {
                         var points_to_write = points.map(function(point) {
                             var point_to_write = _.clone(point);

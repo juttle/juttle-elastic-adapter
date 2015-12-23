@@ -42,7 +42,7 @@ describe('optimization', function() {
     modes.forEach(function(type) {
         describe(type, function() {
             before(function() {
-                return test_utils.clear_logstash_data(type)
+                return test_utils.clear_data(type)
                     .then(function() {
                         var points_to_write = points.map(function(point) {
                             var point_to_write = _.clone(point);
@@ -238,7 +238,8 @@ describe('optimization', function() {
                     var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce -every :s: -acc true by clientip', type, start, end);
                     return check_juttle({program: program})
                         .then(function(result) {
-                            expect(result.prog.graph.es_opts).deep.equal({ limit: undefined, aggregations: undefined });
+                            expect(result.prog.graph.es_opts.limit).equal(undefined);
+                            expect(result.prog.graph.es_opts.aggregations).equal(undefined);
                         });
                 });
 
