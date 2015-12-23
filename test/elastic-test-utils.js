@@ -38,6 +38,8 @@ var aws_client = Promise.promisifyAll(new AmazonElasticsearchClient({
     host: AWS_HOST
 }));
 
+var test_index_prefix = 'my_index_prefix';
+var has_index_id = 'has_default_index';
 var config = [{
     id: LOCAL,
     address: 'localhost',
@@ -53,17 +55,25 @@ var config = [{
     type: 'aws',
     endpoint: AWS_HOST,
     region: AWS_REGION
-}];
+},
+{
+    id: has_index_id,
+    address: 'localhost',
+    port: 9200,
+    index_prefix: test_index_prefix
+}
+];
 
 var adapter = Elastic(config, Juttle);
 
 Juttle.adapters.register(adapter.name, adapter);
 
-function clear_logstash_data(type) {
+function clear_data(type, indexes) {
+    indexes = indexes || 'logstash-*';
     if (type === 'aws') {
-        return aws_client.deleteAsync({index: 'logstash-*'});
+        return aws_client.deleteAsync({index: indexes});
     } else {
-        return local_client.indices.delete({index: 'logstash-*'});
+        return local_client.indices.delete({index: indexes});
     }
 }
 
@@ -133,10 +143,20 @@ function check_optimization(juttle, options) {
     });
 }
 
+function list_indices() {
+    return local_client.indices.getAliases()
+        .then(function(result) {
+            return Object.keys(result);
+        });
+}
+
 module.exports = {
     modes: modes,
     check_result_vs_expected_sorting_by: check_result_vs_expected_sorting_by,
     verify_import: verify_import,
     check_optimization: check_optimization,
-    clear_logstash_data: clear_logstash_data
+    clear_data: clear_data,
+    list_indices: list_indices,
+    test_index_prefix: test_index_prefix,
+    has_index_id: has_index_id,
 };
