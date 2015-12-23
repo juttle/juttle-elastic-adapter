@@ -41,29 +41,24 @@ describe('optimization', function() {
 
     modes.forEach(function(type) {
         describe(type, function() {
+            after(function() {
+                return test_utils.clear_data(type);
+            });
+
             before(function() {
-                return test_utils.clear_data(type)
-                    .then(function() {
-                        var points_to_write = points.map(function(point) {
-                            var point_to_write = _.clone(point);
-                            point_to_write.time /= 1000;
-                            return point_to_write;
-                        });
-                        var program = util.format('emit -points %s | write elastic -id "%s"', JSON.stringify(points_to_write), type);
-                        return check_juttle({
-                            program: program
-                        });
-                    })
-                    .then(function() {
-                        return test_utils.verify_import(points, type);
-                    });
+                var points_to_write = points.map(function(point) {
+                    var point_to_write = _.clone(point);
+                    point_to_write.time /= 1000;
+                    return point_to_write;
+                });
+                return test_utils.write(points_to_write, type)
+                .then(function() {
+                    return test_utils.verify_import(points, type);
+                });
             });
 
             it('optimizes head', function() {
-                var program = util.format('read elastic -id "%s" -from :10 years ago: -to :now: | head 3', type);
-                return check_juttle({
-                    program: program
-                })
+                return test_utils.read_all(type, '| head 3')
                 .then(function(result) {
                     var expected = expected_points.slice(0, 3);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
@@ -74,10 +69,7 @@ describe('optimization', function() {
             it('optimizes head with a nontrivial time filter', function() {
                 var start = '2014-09-17T14:13:43.000Z';
                 var end = '2014-09-17T14:13:46.000Z';
-                var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | head 2', type, start, end);
-                return check_juttle({
-                    program: program
-                })
+                return test_utils.read(start, end, type, '| head 2')
                 .then(function(result) {
                     var expected = expected_points.filter(function(pt) {
                         return pt.time >= start && pt.time < end;
@@ -89,10 +81,7 @@ describe('optimization', function() {
             });
 
             it('optimizes head with tag filter', function() {
-                var program = util.format('read elastic -id "%s" -from :10 years ago: -to :now: clientip = "93.114.45.13" | head 2', type);
-                return check_juttle({
-                    program: program
-                })
+                return test_utils.read_all(type, 'clientip = "93.114.45.13" | head 2')
                 .then(function(result) {
                     var expected = expected_points.filter(function(pt) {
                         return pt.clientip === '93.114.45.13';
@@ -104,10 +93,7 @@ describe('optimization', function() {
             });
 
             it('optimizes head 0 (returns nothing)', function() {
-                var program = util.format('read elastic -id "%s" -from :10 years ago: -to :now: | head 0', type);
-                return check_juttle({
-                    program: program
-                })
+                return test_utils.read_all(type, '| head 0')
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([]);
                     expect(result.prog.graph.es_opts.limit).equal(0);
@@ -116,10 +102,7 @@ describe('optimization', function() {
 
             describe('reduce', function() {
                 it('optimizes count', function() {
-                    var program = util.format('read elastic -id "%s" -from :10 years ago: -to :now: | reduce count()', type);
-                    return check_juttle({
-                        program: program
-                    })
+                    return test_utils.read_all(type, '| reduce count()')
                     .then(function(result) {
                         var first_node = result.prog.graph.head[0];
                         expect(first_node.procName).equal('elastic_read');
@@ -133,10 +116,7 @@ describe('optimization', function() {
                 });
 
                 it('optimizes count with a named reducer', function() {
-                    var program = util.format('read elastic -id "%s" -from :10 years ago: -to :now: | reduce x=count()', type);
-                    return check_juttle({
-                        program: program
-                    })
+                    return test_utils.read_all(type, '| reduce x=count()')
                     .then(function(result) {
                         expect(result.sinks.table).deep.equal([{x: 30}]);
                         expect(result.prog.graph.es_opts.aggregations.count).equal('x');
@@ -144,10 +124,7 @@ describe('optimization', function() {
                 });
 
                 it('optimizes count by', function() {
-                    var program = util.format('read elastic -id "%s" -from :10 years ago: -to :now: | reduce count() by clientip', type);
-                    return check_juttle({
-                        program: program
-                    })
+                    return test_utils.read_all(type, '| reduce count() by clientip')
                     .then(function(result) {
                         expect(result.sinks.table).deep.equal([
                             {clientip: '83.149.9.216', count: 23},
@@ -171,53 +148,48 @@ describe('optimization', function() {
                 });
 
                 it('optimizes reduce -every count()', function() {
-                    var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce -every :s: count()', type, start, end);
-                    return test_utils.check_optimization(program);
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: count()');
                 });
 
                 it('optimizes reduce -every count() by', function() {
-                    var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce -every :s: count() by clientip', type, start, end);
-                    return test_utils.check_optimization(program);
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: count() by clientip');
                 });
 
                 it('optimizes reduce -every -on count()', function() {
-                    var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce -every :s: -on :0.5s: count()', type, start, end);
-                    return test_utils.check_optimization(program);
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: -on :0.5s: count()');
                 });
 
                 it('optimizes reduce -every -on count() by', function() {
-                    var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce -every :s: -on :0.3s: count() by clientip', type, start, end);
-                    return test_utils.check_optimization(program);
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: -on :0.3s: count() by clientip');
                 });
 
                 it('-on a non-duration moment', function() {
                     var on = new Date().toISOString();
-                    var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce -every :s: -on :%s: count() by clientip', type, start, end, on);
-                    return test_utils.check_optimization(program);
+                    var extra = util.format('| reduce -every :s: -on :%s: count() by clientip', on);
+                    return test_utils.check_optimization(start, end, type, extra);
                 });
 
                 it('optimizes non-count reducers', function() {
-                    var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce sum(bytes), avg(bytes), max(bytes), min(bytes), count_unique(bytes)', type, start, end);
-                    return test_utils.check_optimization(program);
+                    var extra = '| reduce sum(bytes), avg(bytes), max(bytes), min(bytes), count_unique(bytes)';
+                    return test_utils.check_optimization(start, end, type, extra);
                 });
 
                 it('optimizes non-count reducers -every', function() {
-                    var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce -every :s: sum(bytes), avg(bytes), max(bytes), min(bytes), count_unique(bytes)', type, start, end);
-                    return test_utils.check_optimization(program, {
+                    var extra = '| reduce -every :s: sum(bytes), avg(bytes), max(bytes), min(bytes), count_unique(bytes)';
+                    return test_utils.check_optimization(start, end, type, extra, {
                         massage: format_juttle_result_like_es
                     });
                 });
 
                 it('optimizes non-count reducers -every -on', function() {
-                    var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce -every :s: -on :0.2s: sum(bytes), avg(bytes), max(bytes), min(bytes), count_unique(bytes)', type, start, end);
-                    return test_utils.check_optimization(program, {
+                    var extra = '| reduce -every :s: -on :0.2s: sum(bytes), avg(bytes), max(bytes), min(bytes), count_unique(bytes)';
+                    return test_utils.check_optimization(start, end, type, extra, {
                         massage: format_juttle_result_like_es
                     });
                 });
 
                 it('optimizes no reducers', function() {
-                    var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce by clientip', type, start, end);
-                    return test_utils.check_optimization(program, {
+                    return test_utils.check_optimization(start, end, type, '| reduce by clientip', {
                         massage: function(array) {
                             return _.sortBy(array, 'clientip');
                         }
@@ -225,18 +197,16 @@ describe('optimization', function() {
                 });
 
                 it('optimizes no reducers -every', function() {
-                    var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce -every :s: by clientip', type, start, end);
-                    return test_utils.check_optimization(program);
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: by clientip');
                 });
 
                 it('optimizes no reducers -every -on', function() {
-                    var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce -every :s: -on :0.4s: by clientip', type, start, end);
-                    return test_utils.check_optimization(program);
+                    var extra = '| reduce -every :s: -on :0.4s: by clientip';
+                    return test_utils.check_optimization(start, end, type, extra);
                 });
 
                 it('doesn\'t optimize reduce -acc true', function() {
-                    var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce -every :s: -acc true by clientip', type, start, end);
-                    return check_juttle({program: program})
+                    return test_utils.read(start, end, type, '| reduce -every :s: -acc true by clientip')
                         .then(function(result) {
                             expect(result.prog.graph.es_opts.limit).equal(undefined);
                             expect(result.prog.graph.es_opts.aggregations).equal(undefined);
@@ -245,8 +215,8 @@ describe('optimization', function() {
 
                 // travis doesn't have aggkey.groovy so we can't test this in the CI
                 it.skip('optimizes reduce by with missing fields', function() {
-                    var program = util.format('read elastic -id "%s" -from :%s: -to :%s: | reduce count() by clientip, garbage', type, start, end);
-                    return test_utils.check_optimization(program, {
+                    var extra = '| reduce count() by clientip, garbage';
+                    return test_utils.check_optimization(start, end, type, extra, {
                         massage: function(array) {
                             return _.sortBy(array, 'clientip');
                         }

@@ -22,10 +22,11 @@
     "elasticsearch": "^10.0.1",
     "extendable-base": "^0.3.1",
     "request": "^2.44.0",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "uuid": "^2.0.1"
   },
   "peerDependencies": {
-      "juttle": "0.1.x"
+    "juttle": "0.1.x"
   },
   "devDependencies": {
     "chai": "^3.4.1",

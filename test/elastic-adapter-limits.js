@@ -26,31 +26,27 @@ describe('elastic source limits', function() {
 
     modes.forEach(function(type) {
         describe(type, function() {
+            after(function() {
+                return test_utils.clear_data(type);
+            });
+
             before(function() {
-                return test_utils.clear_data(type)
-                    .then(function() {
-                        var points_to_write = points.map(function(point) {
-                            var point_to_write = _.clone(point);
-                            point_to_write.time /= 1000;
-                            return point_to_write;
-                        });
-                        var program = util.format('emit -points %s | write elastic -id "%s"', JSON.stringify(points_to_write), type);
-                        return check_juttle({
-                            program: program
-                        });
-                    })
-                    .then(function() {
-                        return test_utils.verify_import(points, type);
-                    });
+                var points_to_write = points.map(function(point) {
+                    var point_to_write = _.clone(point);
+                    point_to_write.time /= 1000;
+                    return point_to_write;
+                });
+
+                return test_utils.write(points_to_write, type)
+                .then(function() {
+                    return test_utils.verify_import(points, type);
+                });
             });
 
             it('executes multiple fetches', function() {
                 var start = '2014-09-17T14:13:47.000Z';
                 var end = '2014-09-17T14:14:32.000Z';
-                var program = util.format('read elastic -from :%s: -to :%s: -id "%s"', start, end, type);
-                return check_juttle({
-                    program: program
-                })
+                return test_utils.read(start, end, type)
                 .then(function(result) {
                     var expected = expected_points.filter(function(pt) {
                         return pt.time >= start && pt.time < end;
@@ -61,20 +57,16 @@ describe('elastic source limits', function() {
             });
 
             it('errors if you try to read too many simultaneous points', function() {
-                var program = util.format('read elastic -from :10 years ago: -to :now: -fetch_size 2 -deep_paging_limit 3 -id "%s"', type);
-                return check_juttle({
-                    program: program
-                })
+                var extra = '-fetch_size 2 -deep_paging_limit 3';
+                return test_utils.read_all(type, extra)
                 .then(function(result) {
                     expect(result.errors).deep.equal([ 'Cannot fetch more than 3 points with the same timestamp' ]);
                 });
             });
 
             it('enforces head across multiple fetches', function() {
-                var program = util.format('read elastic -from :10 years ago: -to :now: -fetch_size 2 -id "%s" | head 3', type);
-                return check_juttle({
-                    program: program
-                })
+                var extra = '-fetch_size 2 | head 3';
+                return test_utils.read_all(type, extra)
                 .then(function(result) {
                     var expected = expected_points.slice(0, 3);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
