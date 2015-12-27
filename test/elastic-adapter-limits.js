@@ -73,6 +73,32 @@ describe('elastic source limits', function() {
                     expect(result.prog.graph.es_opts.limit).equal(3);
                 });
             });
+
+            it('catches window errors and reports something usable', function() {
+                function set_window(size) {
+                    return request.putAsync({
+                        url: 'http://localhost:9200/logstash-*/_settings',
+                        json: {
+                            index: {
+                                max_result_window: size
+                            }
+                        }
+                    });
+                }
+
+                return set_window(100)
+                .spread(function(res, body) {
+                    var program = 'read elastic -from :10 years ago: -to :now:';
+                    return check_juttle({program: program});
+                })
+                .then(function(result) {
+                    var e = 'Tried to read more than 10000 points with the same timestamp, increase the max_result_window setting on the relevant indices to read more (performance may vary)';
+                    expect(result.errors).deep.equal([e]);
+                })
+                .finally(function() {
+                    return set_window(10000);
+                });
+            });
         });
     });
 });
