@@ -77,26 +77,28 @@ var adapter = Elastic(config, Juttle);
 
 Juttle.adapters.register(adapter.name, adapter);
 
-function write(points, id) {
-    var program = 'emit -points %s | write elastic -id "%s" -index_prefix "%s"';
-    var write_program = util.format(program, JSON.stringify(points), id, TEST_RUN_ID);
+function write(points, id, interval) {
+    interval = interval || 'day';
+    var program = 'emit -points %s | write elastic -id "%s" -index_prefix "%s" -index_interval "%s"';
+    var write_program = util.format(program, JSON.stringify(points), id, TEST_RUN_ID, interval);
 
     return check_juttle({
         program: write_program
     });
 }
 
-function read(start, end, id, extra) {
-    var program = 'read elastic -from :%s: -to :%s: -id "%s" -index_prefix "%s" %s';
-    var read_program = util.format(program, start, end, id, TEST_RUN_ID, extra || '');
+function read(start, end, id, extra, interval) {
+    interval = interval || 'day';
+    var program = 'read elastic -from :%s: -to :%s: -id "%s" -index_prefix "%s" -index_interval "%s" %s';
+    var read_program = util.format(program, start, end, id, TEST_RUN_ID, interval, extra || '');
 
     return check_juttle({
         program: read_program
     });
 }
 
-function read_all(type, extra) {
-    return read('10 years ago', 'now', type, extra);
+function read_all(type, extra, interval) {
+    return read('10 years ago', 'now', type, extra, interval);
 }
 
 function clear_data(type, indexes) {
@@ -180,6 +182,13 @@ function list_indices() {
         });
 }
 
+function expect_to_fail(promise, message) {
+    return promise.throw(new Error('should have failed'))
+        .catch(function(err) {
+            expect(err.message).equal(message);
+        });
+}
+
 module.exports = {
     read: read,
     read_all: read_all,
@@ -193,4 +202,5 @@ module.exports = {
     test_index_prefix: test_index_prefix,
     has_index_id: has_index_id,
     test_id: TEST_RUN_ID,
+    expect_to_fail: expect_to_fail,
 };
