@@ -146,13 +146,7 @@ describe('elastic source', function() {
         });
 
         it('errors if you read from nonexistent id', function() {
-            return test_utils.read_all('bananas')
-            .then(function() {
-                throw new Error('should have failed');
-            })
-            .catch(function(err) {
-                expect(err.message).equal('invalid id: bananas');
-            });
+            return test_utils.expect_to_fail(test_utils.read_all('bananas'), 'invalid id: bananas');
         });
 
         it('errors if you write to nonexistent id', function() {
