@@ -108,7 +108,7 @@ describe('optimization', function() {
                         expect(first_node.procName).equal('elastic_read');
 
                         var second_node = first_node.out_.default[0].proc;
-                        expect(second_node.procName).equal('clientsink');
+                        expect(second_node.procName).equal('view');
 
                         expect(result.sinks.table).deep.equal([{count: 30}]);
                         expect(result.prog.graph.es_opts.aggregations.count).equal('count');
