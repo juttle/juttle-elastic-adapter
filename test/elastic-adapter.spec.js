@@ -105,6 +105,22 @@ describe('elastic source', function() {
                 });
             });
 
+            it('compiles moments in filter expressions', function() {
+                return test_utils.read_all(type, 'client_ip != :5 minutes ago:')
+                    .then(function(result) {
+                        expect(result.errors).deep.equal([]);
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
+                    });
+            });
+
+            it('compiles durations in filter expressions', function() {
+                return test_utils.read_all(type, 'client_ip != :5 minutes:')
+                    .then(function(result) {
+                        expect(result.errors).deep.equal([]);
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
+                    });
+            });
+
             it('counts points', function() {
                 var start = '2014-09-17T14:13:42.000Z';
                 var end = '2014-09-17T14:13:43.000Z';
