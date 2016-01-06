@@ -28,13 +28,15 @@ describe('index intervals', function() {
     });
 
     afterEach(function() {
-        return test_utils.clear_data();
+        return test_utils.clear_data('local', '*');
     });
 
     function check(interval, suffix) {
-        return test_utils.write(points_to_write, 'local', interval)
-            .then(function() {
-                return test_utils.verify_import(expected_points);
+        var index = suffix ? interval + '*' : 'none';
+        return test_utils.write(points_to_write, 'local', index, interval)
+            .then(function(result) {
+                expect(result.errors).deep.equal([]);
+                return test_utils.verify_import(expected_points, 'local', index);
             })
             .then(function() {
                 return test_utils.list_indices();
@@ -47,7 +49,7 @@ describe('index intervals', function() {
                 expect(week_indices.length).at.least(1);
                 var start = '2014-09-17T14:13:42.000Z';
                 var end = '2014-10-17T14:13:42.000Z';
-                return test_utils.read(start, end, 'local', '', interval);
+                return test_utils.read(start, end, 'local', '', index, interval);
             })
             .then(function(result) {
                 test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
@@ -70,11 +72,34 @@ describe('index intervals', function() {
         return check('none', '');
     });
 
-    it('errors on bogus interval', function() {
-        var message = 'invalid interval: bananas; accepted intervals are "day", "week", "month" "year", and "none"';
-        return Promise.all([
-            test_utils.expect_to_fail(test_utils.read_all('local', '', 'bananas'), message),
-            test_utils.expect_to_fail(test_utils.write(points_to_write, 'local', 'bananas'), message)
-        ]);
+    describe('errors', function() {
+        it('bogus interval', function() {
+            var message = 'invalid interval: bananas; accepted intervals are "day", "week", "month" "year", and "none"';
+            return Promise.all([
+                test_utils.expect_to_fail(test_utils.read_all('local', '', 'some_index', 'bananas'), message),
+                test_utils.expect_to_fail(test_utils.write(points_to_write, 'local', 'some_index', 'bananas'), message)
+            ]);
+        });
+
+        it('star in middle of write index', function() {
+            var index = 's*tar';
+            var message = 'cannot write to index pattern: ' + index;
+            return test_utils.expect_to_fail(test_utils.write([{}], 'local', index), message);
+        });
+
+        it('indexInterval and no star', function() {
+            var message = 'with indexInterval, index must end in *';
+            var index = 'no_star';
+            return Promise.all([
+                test_utils.expect_to_fail(test_utils.read_all('local', '', index, 'day'), message),
+                test_utils.expect_to_fail(test_utils.write([{}], 'local', index, 'day'), message)
+            ]);
+        });
+
+        it('star in write index for none', function() {
+            var message = 'index for write with interval "none" cannot contain *';
+            var index = 'star*';
+            return test_utils.expect_to_fail(test_utils.write([{}], 'local', index, 'none'), message);
+        });
     });
 });

@@ -16,6 +16,12 @@ var expected_points = points.map(function(pt) {
     return new_pt;
 });
 
+var points_to_write = points.map(function(point) {
+    var point_to_write = _.clone(point);
+    point_to_write.time /= 1000;
+    return point_to_write;
+});
+
 // Register the adapter
 require('./elastic-test-utils');
 
@@ -24,23 +30,17 @@ var modes = test_utils.modes;
 describe('elastic source', function() {
     this.timeout(300000);
     modes.forEach(function(type) {
-        after(function() {
-            return test_utils.clear_data(type);
-        });
-
         describe('basic functionality -- ' + type, function() {
             before(function() {
-                var points_to_write = points.map(function(point) {
-                    var point_to_write = _.clone(point);
-                    point_to_write.time /= 1000;
-                    return point_to_write;
-                });
-
                 return test_utils.write(points_to_write, type)
                 .then(function(res) {
                     expect(res.errors).deep.equal([]);
                     return test_utils.verify_import(points, type);
                 });
+            });
+
+            after(function() {
+                return test_utils.clear_data(type);
             });
 
             it('gracefully handles a lack of data', function() {
@@ -96,7 +96,7 @@ describe('elastic source', function() {
             });
 
             it('reads with -last', function() {
-                var program = util.format('read elastic -last :10 years: -id "%s" -index_prefix "%s"', type, test_utils.test_id);
+                var program = util.format('read elastic -last :10 years: -id "%s" -index "%s*"', type, test_utils.test_id);
                 return check_juttle({
                     program: program
                 })
@@ -133,7 +133,8 @@ describe('elastic source', function() {
             it('errors if you write a point without time', function() {
                 var timeless = {value: 1, name: 'dave'};
 
-                var write_program = util.format('emit -points %s | remove time | write elastic -id "%s"', JSON.stringify([timeless]), type);
+                var program_base = 'emit -points %s | remove time | write elastic -id "%s" -index "timeless"';
+                var write_program = util.format(program_base, JSON.stringify([timeless]), type);
 
                 return check_juttle({
                     program: write_program
@@ -177,12 +178,30 @@ describe('elastic source', function() {
         var test_index = 'test';
 
         after(function() {
-            var indexes = util.format('%s*,%s*', test_index, test_utils.test_index_prefix);
+            var indexes = util.format('%s*,%s*,juttle', test_index, test_utils.test_index);
             return test_utils.clear_data(null, indexes);
         });
 
+        it('default configuration: juttle index', function() {
+            var program = util.format('emit -points %s | write elastic', JSON.stringify(points_to_write));
+            return check_juttle({
+                program: program
+            })
+            .then(function(result) {
+                expect(result.errors).deep.equal([]);
+                return test_utils.verify_import(points, 'local', 'juttle');
+            })
+            .then(function() {
+                var read = 'read elastic -last :10 years:';
+                return check_juttle({program: read});
+            })
+            .then(function(result) {
+                test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
+            });
+        });
+
         it('read - no such index', function() {
-            var program = 'read elastic -last :10 years: -index_prefix "no_such_index"';
+            var program = 'read elastic -last :10 years: -index "no_such_index"';
             return check_juttle({
                 program: program
             })
@@ -195,14 +214,14 @@ describe('elastic source', function() {
         it('writes and reads a specified index', function() {
             var point = {
                 time: new Date().toISOString(),
-                test: '-index_prefix'
+                test: '-index'
             };
-            var write_program = util.format('emit -points %s | write elastic -index_prefix "%s"', JSON.stringify([point]), test_index);
+            var write_program = util.format('emit -points %s | write elastic -index "%s"', JSON.stringify([point]), test_index);
             return check_juttle({
                 program: write_program
             })
             .then(function() {
-                var read_program = util.format('read elastic -last :10 years: -index_prefix "%s"', test_index);
+                var read_program = util.format('read elastic -last :10 years: -index "%s"', test_index);
                 return retry(function() {
                     return check_juttle({
                         program: read_program
@@ -215,10 +234,10 @@ describe('elastic source', function() {
         });
 
         it('uses a different default if one is configured', function() {
-            var index_regex = new RegExp(test_utils.test_index_prefix);
+            var index_regex = new RegExp(test_utils.test_index);
             var point = {
                 time: new Date().toISOString(),
-                test: 'custom_prefix'
+                test: 'custom_index'
             };
             return test_utils.list_indices()
                 .then(function(indices) {

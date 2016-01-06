@@ -34,7 +34,7 @@ var local_client = Promise.promisifyAll(new Elasticsearch.Client({
     host: 'localhost:9200'
 }));
 
-var test_index_prefix = 'my_index_prefix';
+var test_index = 'my_index';
 var has_index_id = 'has_default_index';
 
 var config = [{
@@ -51,7 +51,7 @@ var config = [{
     id: has_index_id,
     address: 'localhost',
     port: 9200,
-    index_prefix: test_index_prefix
+    index: test_index
 }
 ];
 
@@ -77,28 +77,30 @@ var adapter = Elastic(config, Juttle);
 
 Juttle.adapters.register(adapter.name, adapter);
 
-function write(points, id, interval) {
-    interval = interval || 'day';
-    var program = 'emit -points %s | write elastic -id "%s" -index_prefix "%s" -index_interval "%s"';
-    var write_program = util.format(program, JSON.stringify(points), id, TEST_RUN_ID, interval);
+function write(points, id, index, interval) {
+    interval = interval || 'none';
+    index = index || TEST_RUN_ID;
+    var program = 'emit -points %s | write elastic -id "%s" -index "%s" -indexInterval "%s"';
+    var write_program = util.format(program, JSON.stringify(points), id, index, interval);
 
     return check_juttle({
         program: write_program
     });
 }
 
-function read(start, end, id, extra, interval) {
-    interval = interval || 'day';
-    var program = 'read elastic -from :%s: -to :%s: -id "%s" -index_prefix "%s" -index_interval "%s" %s';
-    var read_program = util.format(program, start, end, id, TEST_RUN_ID, interval, extra || '');
+function read(start, end, id, extra, index, interval) {
+    interval = interval || 'none';
+    index = index || TEST_RUN_ID;
+    var program = 'read elastic -from :%s: -to :%s: -id "%s" -index "%s" -indexInterval "%s" %s';
+    var read_program = util.format(program, start, end, id, index, interval, extra || '');
 
     return check_juttle({
         program: read_program
     });
 }
 
-function read_all(type, extra, interval) {
-    return read('10 years ago', 'now', type, extra, interval);
+function read_all(type, extra, index, interval) {
+    return read('10 years ago', 'now', type, extra, index, interval);
 }
 
 function clear_data(type, indexes) {
@@ -112,14 +114,16 @@ function clear_data(type, indexes) {
 
 function verify_import(points, type, indexes) {
     var client = type === 'aws' ? aws_client : local_client;
+    var request_body = {
+        index: indexes || TEST_RUN_ID + '*',
+        type: '',
+        body: {
+            size: 10000
+        }
+    };
+
     return retry(function() {
-        return client.searchAsync({
-            index: indexes || TEST_RUN_ID + '*',
-            type: '',
-            body: {
-                size: 10000
-            }
-        })
+        return client.searchAsync(request_body)
         .then(function(body) {
             if (Array.isArray(body)) {
                 body = body[0];
@@ -199,7 +203,7 @@ module.exports = {
     check_optimization: check_optimization,
     clear_data: clear_data,
     list_indices: list_indices,
-    test_index_prefix: test_index_prefix,
+    test_index: test_index,
     has_index_id: has_index_id,
     test_id: TEST_RUN_ID,
     expect_to_fail: expect_to_fail,
