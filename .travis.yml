@@ -13,6 +13,7 @@ addons:
 
 before_install:
     - export CXX="g++-4.8"
+    - npm install juttle@0.2.x
 
 node_js:
     - '4.2'
@@ -22,7 +23,6 @@ services:
     - elasticsearch
 
 before_script:
-    - npm install juttle@0.2.x
     - npm install -g jshint
     - npm install -g jscs
 
