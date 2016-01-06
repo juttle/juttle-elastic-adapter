@@ -22,7 +22,7 @@ services:
     - elasticsearch
 
 before_script:
-    - npm install juttle@0.1.x
+    - npm install juttle@0.2.x
     - npm install -g jshint
     - npm install -g jscs
 
