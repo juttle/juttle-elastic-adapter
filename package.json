@@ -26,7 +26,7 @@
     "uuid": "^2.0.1"
   },
   "peerDependencies": {
-    "juttle": "^0.1.0"
+    "juttle": "^0.2.0"
   },
   "devDependencies": {
     "chai": "^3.4.1",
