@@ -18,12 +18,10 @@
     "aws-es": "juttle/aws-es.git",
     "bluebird": "^2.9.30",
     "bluebird-retry": "^0.5.2",
-    "chai": "^3.4.1",
     "elasticsearch": "^10.0.1",
     "extendable-base": "^0.3.1",
     "request": "^2.44.0",
-    "underscore": "^1.8.3",
-    "uuid": "^2.0.1"
+    "underscore": "^1.8.3"
   },
   "peerDependencies": {
     "juttle": "^0.1.0"
@@ -34,6 +32,7 @@
   },
   "engines": {
     "node": ">=4.2.0",
-    "npm": ">=2.14.7"
+    "npm": ">=2.14.7",
+    "uuid": "^2.0.1"
   }
 }
