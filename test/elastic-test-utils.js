@@ -77,11 +77,12 @@ var adapter = Elastic(config, Juttle);
 
 Juttle.adapters.register(adapter.name, adapter);
 
-function write(points, id, index, interval) {
+function write(points, id, index, interval, extra) {
     interval = interval || 'none';
     index = index || TEST_RUN_ID;
-    var program = 'emit -points %s | write elastic -id "%s" -index "%s" -indexInterval "%s"';
-    var write_program = util.format(program, JSON.stringify(points), id, index, interval);
+    extra = extra || '';
+    var program = 'emit -points %s | write elastic -id "%s" -index "%s" -indexInterval "%s" %s';
+    var write_program = util.format(program, JSON.stringify(points), id, index, interval, extra);
 
     return check_juttle({
         program: write_program
@@ -134,7 +135,9 @@ function verify_import(points, type, indexes) {
 
             points.forEach(function(point) {
                 var expected = _.clone(point);
-                expected.time = new Date(expected.time).toISOString();
+                if (expected.time) {
+                    expected.time = new Date(expected.time).toISOString();
+                }
                 expect(_.findWhere(received, expected)).exist; // jshint ignore:line
             });
         });
@@ -186,6 +189,13 @@ function list_indices() {
         });
 }
 
+function search() {
+    return local_client.search({
+        index: '*',
+        size: 10000
+    });
+}
+
 function expect_to_fail(promise, message) {
     return promise.throw(new Error('should have failed'))
         .catch(function(err) {
@@ -206,5 +216,6 @@ module.exports = {
     test_index: test_index,
     has_index_id: has_index_id,
     test_id: TEST_RUN_ID,
+    search: search,
     expect_to_fail: expect_to_fail,
 };

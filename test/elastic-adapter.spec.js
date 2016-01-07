@@ -257,4 +257,45 @@ describe('elastic source', function() {
                 });
         });
     });
+
+    describe('timeField', function() {
+        after(function() {
+            return test_utils.clear_data();
+        });
+
+        var time = new Date().toISOString();
+        var my_timed_point = [{time: time, name: 'my_time_test'}];
+        it('reads and writes', function() {
+            return test_utils.write(my_timed_point, 'local', '', 'none', ' -timeField "my_time"')
+                .then(function() {
+                    return test_utils.verify_import(my_timed_point);
+                })
+                .then(function() {
+                    return test_utils.search();
+                })
+                .then(function(es_result) {
+                    var sources = _.pluck(es_result.hits.hits, '_source');
+                    var my_point = _.findWhere(sources, {name: 'my_time_test'});
+                    expect(my_point.my_time).equal(time);
+
+                    return test_utils.read_all('local', '-timeField "my_time" name="my_time_test"');
+                })
+                .then(function(result) {
+                    expect(result.sinks.table).deep.equal(my_timed_point);
+                    return test_utils.read_all('local', '-timeField "my_time" name="my_time_test" | reduce count()');
+                })
+                .then(function(result) {
+                    expect(result.sinks.table).deep.equal([{count: 1}]);
+                });
+        });
+
+        it('optimizes', function() {
+            var end_ts = new Date(time).getTime() + 1;
+            var end = new Date(end_ts).toISOString();
+            return test_utils.read(time, end, 'local', '-timeField "my_time" name="my_time_test" | reduce -every :ms: count()')
+                .then(function(result) {
+                    expect(result.sinks.table).deep.equal([{time: end, count: 1}]);
+                });
+        });
+    });
 });
