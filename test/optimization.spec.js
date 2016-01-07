@@ -10,11 +10,6 @@ var test_utils = require('./elastic-test-utils');
 var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
 var check_juttle = juttle_test_utils.check_juttle;
 var points = require('./apache-sample');
-var expected_points = points.map(function(pt) {
-    var new_pt = _.clone(pt);
-    new_pt.time = new Date(new_pt.time).toISOString();
-    return new_pt;
-});
 
 function format_juttle_result_like_es(pts) {
     pts.forEach(function(pt) {
@@ -29,7 +24,8 @@ function format_juttle_result_like_es(pts) {
 }
 
 var start = new Date(points[0].time).toISOString();
-var end = new Date(_.last(points).time+1).toISOString();
+var end_ms = new Date(_.last(points).time).getTime() + 1;
+var end = new Date(end_ms).toISOString();
 
 // Register the adapter
 require('./elastic-test-utils');
@@ -46,12 +42,7 @@ describe('optimization', function() {
             });
 
             before(function() {
-                var points_to_write = points.map(function(point) {
-                    var point_to_write = _.clone(point);
-                    point_to_write.time /= 1000;
-                    return point_to_write;
-                });
-                return test_utils.write(points_to_write, type)
+                return test_utils.write(points, type)
                 .then(function() {
                     return test_utils.verify_import(points, type);
                 });
@@ -60,7 +51,7 @@ describe('optimization', function() {
             it('optimizes head', function() {
                 return test_utils.read_all(type, '| head 3')
                 .then(function(result) {
-                    var expected = expected_points.slice(0, 3);
+                    var expected = points.slice(0, 3);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
                     expect(result.prog.graph.es_opts.limit).equal(3);
                 });
@@ -71,7 +62,7 @@ describe('optimization', function() {
                 var end = '2014-09-17T14:13:46.000Z';
                 return test_utils.read(start, end, type, '| head 2')
                 .then(function(result) {
-                    var expected = expected_points.filter(function(pt) {
+                    var expected = points.filter(function(pt) {
                         return pt.time >= start && pt.time < end;
                     }).slice(0, 2);
 
@@ -83,7 +74,7 @@ describe('optimization', function() {
             it('optimizes head with tag filter', function() {
                 return test_utils.read_all(type, 'clientip = "93.114.45.13" | head 2')
                 .then(function(result) {
-                    var expected = expected_points.filter(function(pt) {
+                    var expected = points.filter(function(pt) {
                         return pt.clientip === '93.114.45.13';
                     }).slice(0, 2);
 

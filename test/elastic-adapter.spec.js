@@ -10,17 +10,6 @@ var test_utils = require('./elastic-test-utils');
 var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
 var check_juttle = juttle_test_utils.check_juttle;
 var points = require('./apache-sample');
-var expected_points = points.map(function(pt) {
-    var new_pt = _.clone(pt);
-    new_pt.time = new Date(new_pt.time).toISOString();
-    return new_pt;
-});
-
-var points_to_write = points.map(function(point) {
-    var point_to_write = _.clone(point);
-    point_to_write.time /= 1000;
-    return point_to_write;
-});
 
 // Register the adapter
 require('./elastic-test-utils');
@@ -32,7 +21,7 @@ describe('elastic source', function() {
     modes.forEach(function(type) {
         describe('basic functionality -- ' + type, function() {
             before(function() {
-                return test_utils.write(points_to_write, type)
+                return test_utils.write(points, type)
                 .then(function(res) {
                     expect(res.errors).deep.equal([]);
                     return test_utils.verify_import(points, type);
@@ -54,7 +43,7 @@ describe('elastic source', function() {
             it('reads points from Elastic', function() {
                 return test_utils.read_all(type)
                 .then(function(result) {
-                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
+                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
                 });
             });
 
@@ -63,7 +52,7 @@ describe('elastic source', function() {
                 var end = '2014-09-17T14:13:43.000Z';
                 return test_utils.read(start, end, type)
                 .then(function(result) {
-                    var expected = expected_points.filter(function(pt) {
+                    var expected = points.filter(function(pt) {
                         return pt.time >= start && pt.time < end;
                     });
 
@@ -74,7 +63,7 @@ describe('elastic source', function() {
             it('reads with tag filter', function() {
                 return test_utils.read_all(type, 'clientip = "93.114.45.13"')
                 .then(function(result) {
-                    var expected = expected_points.filter(function(pt) {
+                    var expected = points.filter(function(pt) {
                         return pt.clientip === '93.114.45.13';
                     });
 
@@ -85,7 +74,7 @@ describe('elastic source', function() {
             it('reads with free text search', function() {
                 return test_utils.read_all(type, '"Ubuntu"')
                 .then(function(result) {
-                    var expected = expected_points.filter(function(pt) {
+                    var expected = points.filter(function(pt) {
                         return _.any(pt, function(value, key) {
                             return typeof value === 'string' && value.match(/Ubuntu/);
                         });
@@ -101,7 +90,7 @@ describe('elastic source', function() {
                     program: program
                 })
                 .then(function(result) {
-                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
+                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
                 });
             });
 
@@ -109,7 +98,7 @@ describe('elastic source', function() {
                 return test_utils.read_all(type, 'client_ip != :5 minutes ago:')
                     .then(function(result) {
                         expect(result.errors).deep.equal([]);
-                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
                     });
             });
 
@@ -117,7 +106,7 @@ describe('elastic source', function() {
                 return test_utils.read_all(type, 'client_ip != :5 minutes:')
                     .then(function(result) {
                         expect(result.errors).deep.equal([]);
-                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
                     });
             });
 
@@ -183,7 +172,7 @@ describe('elastic source', function() {
         });
 
         it('default configuration: juttle index', function() {
-            var program = util.format('emit -points %s | write elastic', JSON.stringify(points_to_write));
+            var program = util.format('emit -points %s | write elastic', JSON.stringify(points));
             return check_juttle({
                 program: program
             })
@@ -196,7 +185,7 @@ describe('elastic source', function() {
                 return check_juttle({program: read});
             })
             .then(function(result) {
-                test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
+                test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
             });
         });
 

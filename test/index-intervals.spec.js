@@ -10,22 +10,12 @@ var test_utils = require('./elastic-test-utils');
 var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
 var check_juttle = juttle_test_utils.check_juttle;
 var points = require('./apache-sample');
-var expected_points = points.map(function(pt) {
-    var new_pt = _.clone(pt);
-    new_pt.time = new Date(new_pt.time).toISOString();
-    return new_pt;
-});
 
 // Register the adapter
 require('./elastic-test-utils');
 
 describe('index intervals', function() {
     this.timeout(300000);
-    var points_to_write = points.map(function(point) {
-        var point_to_write = _.clone(point);
-        point_to_write.time /= 1000;
-        return point_to_write;
-    });
 
     afterEach(function() {
         return test_utils.clear_data('local', '*');
@@ -33,10 +23,10 @@ describe('index intervals', function() {
 
     function check(interval, suffix) {
         var index = suffix ? interval + '*' : 'none';
-        return test_utils.write(points_to_write, 'local', index, interval)
+        return test_utils.write(points, 'local', index, interval)
             .then(function(result) {
                 expect(result.errors).deep.equal([]);
-                return test_utils.verify_import(expected_points, 'local', index);
+                return test_utils.verify_import(points, 'local', index);
             })
             .then(function() {
                 return test_utils.list_indices();
@@ -52,7 +42,7 @@ describe('index intervals', function() {
                 return test_utils.read(start, end, 'local', '', index, interval);
             })
             .then(function(result) {
-                test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected_points, 'bytes');
+                test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
             });
     }
 
@@ -77,7 +67,7 @@ describe('index intervals', function() {
             var message = 'invalid interval: bananas; accepted intervals are "day", "week", "month" "year", and "none"';
             return Promise.all([
                 test_utils.expect_to_fail(test_utils.read_all('local', '', 'some_index', 'bananas'), message),
-                test_utils.expect_to_fail(test_utils.write(points_to_write, 'local', 'some_index', 'bananas'), message)
+                test_utils.expect_to_fail(test_utils.write(points, 'local', 'some_index', 'bananas'), message)
             ]);
         });
 

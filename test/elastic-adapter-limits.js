@@ -13,12 +13,6 @@ var points = require('./apache-sample');
 // Register the adapter
 require('./elastic-test-utils');
 
-var expected_points = points.map(function(pt) {
-    var new_pt = _.clone(pt);
-    new_pt.time = new Date(new_pt.time).toISOString();
-    return new_pt;
-});
-
 var modes = test_utils.modes;
 
 describe('elastic source limits', function() {
@@ -31,13 +25,7 @@ describe('elastic source limits', function() {
             });
 
             before(function() {
-                var points_to_write = points.map(function(point) {
-                    var point_to_write = _.clone(point);
-                    point_to_write.time /= 1000;
-                    return point_to_write;
-                });
-
-                return test_utils.write(points_to_write, type)
+                return test_utils.write(points, type)
                 .then(function() {
                     return test_utils.verify_import(points, type);
                 });
@@ -48,7 +36,7 @@ describe('elastic source limits', function() {
                 var end = '2014-09-17T14:14:32.000Z';
                 return test_utils.read(start, end, type)
                 .then(function(result) {
-                    var expected = expected_points.filter(function(pt) {
+                    var expected = points.filter(function(pt) {
                         return pt.time >= start && pt.time < end;
                     });
 
@@ -68,7 +56,7 @@ describe('elastic source limits', function() {
                 var extra = '-fetch_size 2 | head 3';
                 return test_utils.read_all(type, extra)
                 .then(function(result) {
-                    var expected = expected_points.slice(0, 3);
+                    var expected = points.slice(0, 3);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
                     expect(result.prog.graph.es_opts.limit).equal(3);
                 });
