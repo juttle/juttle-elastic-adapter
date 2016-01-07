@@ -77,26 +77,30 @@ var adapter = Elastic(config, Juttle);
 
 Juttle.adapters.register(adapter.name, adapter);
 
-function write(points, id) {
+function write(points, id, prefix) {
+    id = id || 'local';
+    prefix = prefix || TEST_RUN_ID;
     var program = 'emit -points %s | write elastic -id "%s" -index_prefix "%s"';
-    var write_program = util.format(program, JSON.stringify(points), id, TEST_RUN_ID);
+    var write_program = util.format(program, JSON.stringify(points), id, prefix);
 
     return check_juttle({
         program: write_program
     });
 }
 
-function read(start, end, id, extra) {
+function read(start, end, id, extra, prefix) {
+    id = id || 'local';
+    prefix = prefix || TEST_RUN_ID;
     var program = 'read elastic -from :%s: -to :%s: -id "%s" -index_prefix "%s" %s';
-    var read_program = util.format(program, start, end, id, TEST_RUN_ID, extra || '');
+    var read_program = util.format(program, start, end, id, prefix, extra || '');
 
     return check_juttle({
         program: read_program
     });
 }
 
-function read_all(type, extra) {
-    return read('10 years ago', 'now', type, extra);
+function read_all(type, extra, prefix) {
+    return read('10 years ago', 'now', type, extra, prefix);
 }
 
 function clear_data(type, indexes) {
@@ -180,6 +184,13 @@ function list_indices() {
         });
 }
 
+function put_template(name, template) {
+    return local_client.indices.putTemplate({
+        name: name,
+        body: template
+    });
+}
+
 module.exports = {
     read: read,
     read_all: read_all,
@@ -190,6 +201,7 @@ module.exports = {
     check_optimization: check_optimization,
     clear_data: clear_data,
     list_indices: list_indices,
+    put_template: put_template,
     test_index_prefix: test_index_prefix,
     has_index_id: has_index_id,
     test_id: TEST_RUN_ID,
