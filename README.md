@@ -102,6 +102,7 @@ Name | Type | Required | Description | Default
 `id` | string | no | read from the configured Elasticsearch endpoint with this ID | the first endpoint in `config.json`
 `index` | string | no | index(es) to read from | `*`
 `indexInterval` | string | no | granularity of an index. valid options: `day`, `week`, `month`, `year`, `none` | `none`
+`type` | string | no | [document type](https://www.elastic.co/guide/en/elasticsearch/guide/current/mapping.html) to read from | all types
 `timeField` | string | no | field containing timestamps | `@timestamp`
 
 ### Write options
@@ -111,6 +112,7 @@ Name | Type | Required | Description | Default
 `id` | string | no | write to the configured Elasticsearch endpoint with this ID | the first endpoint in `config.json`
 `index` | string | no | index to write to | `juttle`
 `indexInterval` | string | no | granularity of an index. valid options: `day` `week`, `month`, `year`, `none` | `none`
+`type` | string | no | document type to write to | `event`
 `timeField` | string | no | field containing timestamps | `@timestamp`
 
 ## Contributing
