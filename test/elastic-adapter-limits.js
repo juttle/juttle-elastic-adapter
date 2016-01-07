@@ -25,7 +25,7 @@ describe('elastic source limits', function() {
             });
 
             before(function() {
-                return test_utils.write(points, type)
+                return test_utils.write(points, {id: type})
                 .then(function() {
                     return test_utils.verify_import(points, type);
                 });
@@ -34,7 +34,7 @@ describe('elastic source limits', function() {
             it('executes multiple fetches', function() {
                 var start = '2014-09-17T14:13:47.000Z';
                 var end = '2014-09-17T14:14:32.000Z';
-                return test_utils.read(start, end, type)
+                return test_utils.read({from: start, to: end, id: type})
                 .then(function(result) {
                     var expected = points.filter(function(pt) {
                         return pt.time >= start && pt.time < end;
@@ -46,7 +46,7 @@ describe('elastic source limits', function() {
 
             it('errors if you try to read too many simultaneous points', function() {
                 var extra = '-fetch_size 2 -deep_paging_limit 3';
-                return test_utils.read_all(type, extra)
+                return test_utils.read({id: type}, extra)
                 .then(function(result) {
                     expect(result.errors).deep.equal([ 'Cannot fetch more than 3 points with the same timestamp' ]);
                 });
@@ -54,7 +54,7 @@ describe('elastic source limits', function() {
 
             it('enforces head across multiple fetches', function() {
                 var extra = '-fetch_size 2 | head 3';
-                return test_utils.read_all(type, extra)
+                return test_utils.read({id: type}, extra)
                 .then(function(result) {
                     var expected = points.slice(0, 3);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');

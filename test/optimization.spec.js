@@ -42,14 +42,14 @@ describe('optimization', function() {
             });
 
             before(function() {
-                return test_utils.write(points, type)
+                return test_utils.write(points, {id: type})
                 .then(function() {
                     return test_utils.verify_import(points, type);
                 });
             });
 
             it('optimizes head', function() {
-                return test_utils.read_all(type, '| head 3')
+                return test_utils.read({id: type}, '| head 3')
                 .then(function(result) {
                     var expected = points.slice(0, 3);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
@@ -60,7 +60,7 @@ describe('optimization', function() {
             it('optimizes head with a nontrivial time filter', function() {
                 var start = '2014-09-17T14:13:43.000Z';
                 var end = '2014-09-17T14:13:46.000Z';
-                return test_utils.read(start, end, type, '| head 2')
+                return test_utils.read({from: start, to: end, id: type}, '| head 2')
                 .then(function(result) {
                     var expected = points.filter(function(pt) {
                         return pt.time >= start && pt.time < end;
@@ -72,7 +72,7 @@ describe('optimization', function() {
             });
 
             it('optimizes head with tag filter', function() {
-                return test_utils.read_all(type, 'clientip = "93.114.45.13" | head 2')
+                return test_utils.read({id: type}, 'clientip = "93.114.45.13" | head 2')
                 .then(function(result) {
                     var expected = points.filter(function(pt) {
                         return pt.clientip === '93.114.45.13';
@@ -84,7 +84,7 @@ describe('optimization', function() {
             });
 
             it('optimizes head 0 (returns nothing)', function() {
-                return test_utils.read_all(type, '| head 0')
+                return test_utils.read({id: type}, '| head 0')
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([]);
                     expect(result.prog.graph.es_opts.limit).equal(0);
@@ -93,7 +93,7 @@ describe('optimization', function() {
 
             describe('reduce', function() {
                 it('optimizes count', function() {
-                    return test_utils.read_all(type, '| reduce count()')
+                    return test_utils.read({id: type}, '| reduce count()')
                     .then(function(result) {
                         var first_node = result.prog.graph.head[0];
                         expect(first_node.procName).equal('elastic_read');
@@ -107,7 +107,7 @@ describe('optimization', function() {
                 });
 
                 it('optimizes count with a named reducer', function() {
-                    return test_utils.read_all(type, '| reduce x=count()')
+                    return test_utils.read({id: type}, '| reduce x=count()')
                     .then(function(result) {
                         expect(result.sinks.table).deep.equal([{x: 30}]);
                         expect(result.prog.graph.es_opts.aggregations.count).equal('x');
@@ -115,7 +115,7 @@ describe('optimization', function() {
                 });
 
                 it('optimizes count by', function() {
-                    return test_utils.read_all(type, '| reduce count() by clientip')
+                    return test_utils.read({id: type}, '| reduce count() by clientip')
                     .then(function(result) {
                         expect(result.sinks.table).deep.equal([
                             {clientip: '83.149.9.216', count: 23},
@@ -197,7 +197,7 @@ describe('optimization', function() {
                 });
 
                 it('doesn\'t optimize reduce -acc true', function() {
-                    return test_utils.read(start, end, type, '| reduce -every :s: -acc true by clientip')
+                    return test_utils.read({from: start, to: end, id: type}, '| reduce -every :s: -acc true by clientip')
                         .then(function(result) {
                             expect(result.prog.graph.es_opts.limit).equal(undefined);
                             expect(result.prog.graph.es_opts.aggregations).equal(undefined);

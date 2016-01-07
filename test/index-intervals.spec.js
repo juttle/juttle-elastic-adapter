@@ -23,7 +23,7 @@ describe('index intervals', function() {
 
     function check(interval, suffix) {
         var index = suffix ? interval + '*' : 'none';
-        return test_utils.write(points, 'local', index, interval)
+        return test_utils.write(points, {index: index, indexInterval: interval})
             .then(function(result) {
                 expect(result.errors).deep.equal([]);
                 return test_utils.verify_import(points, 'local', index);
@@ -39,7 +39,7 @@ describe('index intervals', function() {
                 expect(week_indices.length).at.least(1);
                 var start = '2014-09-17T14:13:42.000Z';
                 var end = '2014-10-17T14:13:42.000Z';
-                return test_utils.read(start, end, 'local', '', index, interval);
+                return test_utils.read({from: start, to: end, index: index, indexInterval: interval});
             })
             .then(function(result) {
                 test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
@@ -65,31 +65,33 @@ describe('index intervals', function() {
     describe('errors', function() {
         it('bogus interval', function() {
             var message = 'invalid interval: bananas; accepted intervals are "day", "week", "month" "year", and "none"';
+            var bad_opts = {indexInterval: 'bananas'};
             return Promise.all([
-                test_utils.expect_to_fail(test_utils.read_all('local', '', 'some_index', 'bananas'), message),
-                test_utils.expect_to_fail(test_utils.write(points, 'local', 'some_index', 'bananas'), message)
+                test_utils.expect_to_fail(test_utils.read(bad_opts), message),
+                test_utils.expect_to_fail(test_utils.write(points, bad_opts), message)
             ]);
         });
 
         it('star in middle of write index', function() {
             var index = 's*tar';
             var message = 'cannot write to index pattern: ' + index;
-            return test_utils.expect_to_fail(test_utils.write([{}], 'local', index), message);
+            return test_utils.expect_to_fail(test_utils.write([{}], {index: index}), message);
         });
 
         it('indexInterval and no star', function() {
             var message = 'with indexInterval, index must end in *';
             var index = 'no_star';
+            var bad_opts = {index: index, indexInterval: 'day'};
             return Promise.all([
-                test_utils.expect_to_fail(test_utils.read_all('local', '', index, 'day'), message),
-                test_utils.expect_to_fail(test_utils.write([{}], 'local', index, 'day'), message)
+                test_utils.expect_to_fail(test_utils.read(bad_opts), message),
+                test_utils.expect_to_fail(test_utils.write([{}], bad_opts), message)
             ]);
         });
 
         it('star in write index for none', function() {
             var message = 'index for write with interval "none" cannot contain *';
             var index = 'star*';
-            return test_utils.expect_to_fail(test_utils.write([{}], 'local', index, 'none'), message);
+            return test_utils.expect_to_fail(test_utils.write([{}], {index: index}), message);
         });
     });
 });

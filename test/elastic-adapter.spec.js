@@ -21,7 +21,7 @@ describe('elastic source', function() {
     modes.forEach(function(type) {
         describe('basic functionality -- ' + type, function() {
             before(function() {
-                return test_utils.write(points, type)
+                return test_utils.write(points, {id: type})
                 .then(function(res) {
                     expect(res.errors).deep.equal([]);
                     return test_utils.verify_import(points, type);
@@ -33,7 +33,7 @@ describe('elastic source', function() {
             });
 
             it('gracefully handles a lack of data', function() {
-                return test_utils.read('1 minute ago', 'now', type)
+                return test_utils.read({from: '1 minute ago', to: 'now', id: type})
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([]);
                     expect(result.errors).deep.equal([]);
@@ -41,7 +41,7 @@ describe('elastic source', function() {
             });
 
             it('reads points from Elastic', function() {
-                return test_utils.read_all(type)
+                return test_utils.read({id: type})
                 .then(function(result) {
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
                 });
@@ -50,7 +50,7 @@ describe('elastic source', function() {
             it('reads with a nontrivial time filter', function() {
                 var start = '2014-09-17T14:13:42.000Z';
                 var end = '2014-09-17T14:13:43.000Z';
-                return test_utils.read(start, end, type)
+                return test_utils.read({from: start, to: end, id: type})
                 .then(function(result) {
                     var expected = points.filter(function(pt) {
                         return pt.time >= start && pt.time < end;
@@ -61,7 +61,7 @@ describe('elastic source', function() {
             });
 
             it('reads with tag filter', function() {
-                return test_utils.read_all(type, 'clientip = "93.114.45.13"')
+                return test_utils.read({id: type}, 'clientip = "93.114.45.13"')
                 .then(function(result) {
                     var expected = points.filter(function(pt) {
                         return pt.clientip === '93.114.45.13';
@@ -72,7 +72,7 @@ describe('elastic source', function() {
             });
 
             it('reads with free text search', function() {
-                return test_utils.read_all(type, '"Ubuntu"')
+                return test_utils.read({id: type}, '"Ubuntu"')
                 .then(function(result) {
                     var expected = points.filter(function(pt) {
                         return _.any(pt, function(value, key) {
@@ -95,7 +95,7 @@ describe('elastic source', function() {
             });
 
             it('compiles moments in filter expressions', function() {
-                return test_utils.read_all(type, 'client_ip != :5 minutes ago:')
+                return test_utils.read({id: type}, 'client_ip != :5 minutes ago:')
                     .then(function(result) {
                         expect(result.errors).deep.equal([]);
                         test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
@@ -103,7 +103,7 @@ describe('elastic source', function() {
             });
 
             it('compiles durations in filter expressions', function() {
-                return test_utils.read_all(type, 'client_ip != :5 minutes:')
+                return test_utils.read({id: type}, 'client_ip != :5 minutes:')
                     .then(function(result) {
                         expect(result.errors).deep.equal([]);
                         test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
@@ -113,7 +113,7 @@ describe('elastic source', function() {
             it('counts points', function() {
                 var start = '2014-09-17T14:13:42.000Z';
                 var end = '2014-09-17T14:13:43.000Z';
-                return test_utils.read(start, end, type, ' | reduce count()')
+                return test_utils.read({from: start, to: end, id: type}, ' | reduce count()')
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([{count: 3}]);
                 });
@@ -138,25 +138,25 @@ describe('elastic source', function() {
 
     describe('endpoints', function() {
         it('reads with -id "b", a broken endpoint', function() {
-            return test_utils.read_all('b')
+            return test_utils.read({id: 'b'})
             .then(function(result) {
                 expect(result.errors).deep.equal(['Failed to connect to Elasticsearch']);
             });
         });
 
         it('writes with -id "b", a broken endpoint', function() {
-            return test_utils.write([{}], 'b')
+            return test_utils.write([{}], {id: 'b'})
             .then(function(result) {
                 expect(result.errors).deep.equal(['insertion failed: Failed to connect to Elasticsearch']);
             });
         });
 
         it('errors if you read from nonexistent id', function() {
-            return test_utils.expect_to_fail(test_utils.read_all('bananas'), 'invalid id: bananas');
+            return test_utils.expect_to_fail(test_utils.read({id: 'bananas'}), 'invalid id: bananas');
         });
 
         it('errors if you write to nonexistent id', function() {
-            return test_utils.write([{}], 'pajamas')
+            return test_utils.write([{}], {id: 'pajamas'})
             .then(function(result) {
                 expect(result.errors).deep.equal(['invalid id: pajamas']);
             });
@@ -255,7 +255,7 @@ describe('elastic source', function() {
         var time = new Date().toISOString();
         var my_timed_point = [{time: time, name: 'my_time_test'}];
         it('reads and writes', function() {
-            return test_utils.write(my_timed_point, 'local', '', 'none', ' -timeField "my_time"')
+            return test_utils.write(my_timed_point, {timeField: 'my_time'})
                 .then(function() {
                     return test_utils.verify_import(my_timed_point);
                 })
@@ -267,11 +267,13 @@ describe('elastic source', function() {
                     var my_point = _.findWhere(sources, {name: 'my_time_test'});
                     expect(my_point.my_time).equal(time);
 
-                    return test_utils.read_all('local', '-timeField "my_time" name="my_time_test"');
+                    var extra = 'name="my_time_test"';
+                    return test_utils.read({timeField: 'my_time'}, extra);
                 })
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal(my_timed_point);
-                    return test_utils.read_all('local', '-timeField "my_time" name="my_time_test" | reduce count()');
+                    var extra = 'name="my_time_test" | reduce count()';
+                    return test_utils.read({timeField: 'my_time'}, extra);
                 })
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([{count: 1}]);
@@ -281,7 +283,9 @@ describe('elastic source', function() {
         it('optimizes', function() {
             var end_ts = new Date(time).getTime() + 1;
             var end = new Date(end_ts).toISOString();
-            return test_utils.read(time, end, 'local', '-timeField "my_time" name="my_time_test" | reduce -every :ms: count()')
+            var extra = 'name="my_time_test" | reduce -every :ms: count()';
+            var options = {from: time, to: end, id: 'local', timeField: 'my_time'};
+            return test_utils.read(options, extra)
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([{time: end, count: 1}]);
                 });

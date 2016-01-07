@@ -77,31 +77,51 @@ var adapter = Elastic(config, Juttle);
 
 Juttle.adapters.register(adapter.name, adapter);
 
-function write(points, id, index, interval, extra) {
-    interval = interval || 'none';
-    index = index || TEST_RUN_ID;
+function _option_is_moment(key) {
+    return key === 'from' || key === 'to';
+}
+
+function options_from_object(options) {
+    return _.reduce(options, function(memo, value, key) {
+        var str = _option_is_moment(key) ? ':%s:' : '"%s"';
+        return memo + '-' + key + ' ' + util.format(str, value) + ' ';
+    }, '');
+}
+
+function write(points, options, extra) {
+    options = options || {};
+    options.index = options.index || TEST_RUN_ID;
     extra = extra || '';
-    var program = 'emit -points %s | write elastic -id "%s" -index "%s" -indexInterval "%s" %s';
-    var write_program = util.format(program, JSON.stringify(points), id, index, interval, extra);
+
+    var opts = options_from_object(options);
+
+    var program = 'emit -points %s | write elastic %s %s';
+    var write_program = util.format(program, JSON.stringify(points), opts, extra);
 
     return check_juttle({
         program: write_program
     });
 }
 
-function read(start, end, id, extra, index, interval) {
-    interval = interval || 'none';
-    index = index || TEST_RUN_ID;
-    var program = 'read elastic -from :%s: -to :%s: -id "%s" -index "%s" -indexInterval "%s" %s';
-    var read_program = util.format(program, start, end, id, index, interval, extra || '');
+var DEFAULT_TEST_READ_OPTIONS = {
+    from: '10 years ago',
+    to: 'now',
+    index: TEST_RUN_ID
+};
+
+function read(options, extra) {
+    options = options || {};
+    _.defaults(options, DEFAULT_TEST_READ_OPTIONS);
+    extra = extra || '';
+
+    var opts = options_from_object(options);
+
+    var program = 'read elastic %s %s';
+    var read_program = util.format(program, opts, extra);
 
     return check_juttle({
         program: read_program
     });
-}
-
-function read_all(type, extra, index, interval) {
-    return read('10 years ago', 'now', type, extra, index, interval);
 }
 
 function clear_data(type, indexes) {
@@ -164,10 +184,12 @@ function check_result_vs_expected_sorting_by(received, expected, field) {
 function check_optimization(start, end, id, extra, options) {
     options = options || {};
     extra = extra || '';
+    var opts = {from: start, to: end, id: id};
     var unoptimized_extra = '-optimize false ' + extra;
+
     return Promise.all([
-        read(start, end, id, extra),
-        read(start, end, id, unoptimized_extra)
+        read(opts, extra),
+        read(opts, unoptimized_extra)
     ])
     .spread(function(optimized, unoptimized) {
         var opt_data = optimized.sinks.table;
@@ -205,7 +227,6 @@ function expect_to_fail(promise, message) {
 
 module.exports = {
     read: read,
-    read_all: read_all,
     write: write,
     modes: modes,
     check_result_vs_expected_sorting_by: check_result_vs_expected_sorting_by,
