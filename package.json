@@ -16,7 +16,7 @@
     "test": "mocha",
     "jshint": "jshint **/*.js",
     "style": "jscs **/*.js",
-    "lint": "npm run jshint & npm run style"
+    "lint": "npm run jshint && npm run style"
   },
   "dependencies": {
     "aws-es": "juttle/aws-es.git",
