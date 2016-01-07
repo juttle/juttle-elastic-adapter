@@ -22,6 +22,7 @@
     "aws-es": "juttle/aws-es.git",
     "bluebird": "^2.9.30",
     "bluebird-retry": "^0.5.2",
+    "current-week-number": "^1.0.7",
     "elasticsearch": "^10.0.1",
     "extendable-base": "^0.3.1",
     "request": "^2.44.0",

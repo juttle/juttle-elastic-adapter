@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/juttle/juttle-elastic-adapter.svg)](https://travis-ci.org/juttle/juttle-elastic-adapter)
 
-The Juttle Elastic Adapter enables reading and writing documents using [Elasticsearch](https://www.elastic.co/products/elasticsearch). It supports the [Logstash](https://www.elastic.co/products/logstash) schema, so it can read any documents stored in Elasticsearch by Logstash.
+The Juttle Elastic Adapter enables reading and writing documents using [Elasticsearch](https://www.elastic.co/products/elasticsearch).
 
 ## Examples
 
@@ -49,9 +49,9 @@ and `port` in this configuration.
 
 The value for `juttle-elastic-adapter` can also be an array of Elasticsearch host locations. Give each one a unique `id` field, and `read -id` and `write -id` will use the appropriate host.
 
-The Juttle Elastic Adapter can also make requests to Amazon Elasticsearch Service instances, which requires a little more configuration. To connect to Amazon Elasticsearch Service, an entry in the `juttle-elastic-adapter` config must have `{"type": "aws"}` as well as `"region"`, `"endpoint"`, `"access_key"`, and `"secret_key"` fields. `"access_key"` and `"secret_key"` can also be specified by the environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` respectively.
+The Juttle Elastic Adapter can also make requests to Amazon Elasticsearch Service instances, which requires a little more configuration. To connect to Amazon Elasticsearch Service, an entry in the `juttle-elastic-adapter` config must have `{"type": "aws"}` as well as `region`, `endpoint`, `access_key`, and `secret_key` fields. `access_key` and `secret_key` can also be specified by the environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` respectively.
 
-Here's an example Juttle Elastic Adapter configuration that can read from either a local Elasticsearch instance running on port 9200 or an Amazon Elasticsearch Service at `search-foo-bar.us-west-2.es.amazonaws.com`:
+Here's an example Juttle Elastic Adapter configuration that can connect to a local Elasticsearch instance running on port 9200 using `read/write elastic -id "local"` and an Amazon Elasticsearch Service at `search-foo-bar.us-west-2.es.amazonaws.com` using `read/write elastic -id "amazon"`:
 
 ```json
 {
@@ -75,25 +75,43 @@ Here's an example Juttle Elastic Adapter configuration that can read from either
 }
 ```
 
-Then `read -id "amazon"` will return points stored in the Amazon Elasticsearch Service instance search-foo-bar.us-west-2.es.amazonaws.com (provided the access_key and secret_key are those of an account with authorization for it), and `read -id "local"` will return points stored in the Elasticsearch instance at localhost:9200.
+## Schema ##
+To read or write data, the adapter has to know the names of the indices storing that data in Elasticsearch. By default, the adapter writes points to an index called `juttle` and reads from all indices.
+
+You can choose indices to read and write from with the `-index` option, or you can specify an `index` for each configured Elasticsearch instance the adapter is connected to.
+
+For schemas such as [Logstash](https://www.elastic.co/products/logstash) that create indices at regular intervals, the adapter supports an `indexInterval` option. Valid values for `indexInterval` are `day`, `week`, `month`, `year`, and `none`. With `week`, the adapter will use indices formatted `${index}${yyyy.ww}`, where `ww` ranges from 01 to 53 numbering the weeks in a year. With `month`, it will use `${index}${yyyy.mm}`, and with `year`, it will use `${index}${yyyy}`. With `none`, the default, it will use just one index entirely specified by `index`. When using `indexInterval`, `index` should be the non-date portion of each index followed by `*`.
+
+Lastly, the adapter expects all documents in Elasticsearch to have a field containing a timestamp. By default, it expects this to be the `@timestamp` field. This is configurable with the `-timeField` option to `read` and `write`.
+
+#### Logstash ####
+Let's look at Logstash for an example of configuring a schema. Logstash creates daily indices that look like `logstash-2016.01.05`. By default, the adapter reads from all indices, so if you want to read from only Logstash's indices, use `logstash-*` for the `index` option.
+
+If you have many days' worth of data, Logstash will create many indices. Reading from many indices can be slow in Elasticsearch. To speed things up in this case, `read elastic` can narrow its search to only the days it needs for its query. To get this behavior, use `-indexInterval "day"`. Also, `write elastic` requires `-indexInterval "day"` for writing into daily indices.
 
 ## Usage
 
 ### Read options
 
 
-Name | Type | Required | Description
------|------|----------|-------------
-`from` | moment | no | select points after this time (inclusive)
-`to`   | moment | no | select points before this time (exclusive)
-`last` | duration | no | select points within this time in the past (exclusive)
-`id` | string | no | Read from the configured Elasticsearch endpoint with this ID
+Name | Type | Required | Description | Default
+-----|------|----------|-------------|---------
+`from` | moment | no | select points after this time (inclusive) | none, either `-from` and `-to` or `-last` must be specified
+`to`   | moment | no | select points before this time (exclusive) | none, either `-from` and `-to` or `-last` must be specified
+`last` | duration | no | select points within this time in the past (exclusive) | none, either `-from` and `-to` or `-last` must be specified
+`id` | string | no | read from the configured Elasticsearch endpoint with this ID | the first endpoint in `config.json`
+`index` | string | no | index(es) to read from | `*`
+`indexInterval` | string | no | granularity of an index. valid options: `day`, `week`, `month`, `year`, `none` | `none`
+`timeField` | string | no | field containing timestamps | `@timestamp`
 
 ### Write options
 
-Name | Type | Required | Description
------|------|----------|-------------
-`id` | string | no | Write to the configured Elasticsearch endpoint with this ID
+Name | Type | Required | Description | Default
+-----|------|----------|-------------|---------
+`id` | string | no | write to the configured Elasticsearch endpoint with this ID | the first endpoint in `config.json`
+`index` | string | no | index to write to | `juttle`
+`indexInterval` | string | no | granularity of an index. valid options: `day` `week`, `month`, `year`, `none` | `none`
+`timeField` | string | no | field containing timestamps | `@timestamp`
 
 ## Contributing
 
