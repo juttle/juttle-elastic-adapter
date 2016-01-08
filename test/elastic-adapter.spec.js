@@ -343,6 +343,59 @@ describe('elastic source', function() {
         });
     });
 
+    describe('idField', function() {
+        var time = new Date().toISOString();
+        var id_point = {time: time, name: 'id_test', id_field: 'my_id', value: 10};
+        var id_field = 'id_field';
+
+        after(function() {
+            return test_utils.clear_data();
+        });
+
+        it('reads and writes', function() {
+            return test_utils.write([id_point], {idField: 'id_field'})
+                .then(function(result) {
+                    return test_utils.verify_import([_.omit(id_point, id_field)]);
+                })
+                .then(function() {
+                    return test_utils.read({idField: 'read_id_field'});
+                })
+                .then(function(result) {
+                    var expected = _.omit(id_point, id_field);
+                    expected.read_id_field = 'my_id';
+
+                    expect(result.sinks.table).deep.equal([expected]);
+                });
+        });
+
+        it('aborts optimization on reduce by idField', function() {
+            return test_utils.read({idField: id_field}, ' | reduce avg(value) by ' + id_field)
+                .then(function(result) {
+                    var expected = {avg: id_point.value};
+                    expected[id_field] = id_point[id_field];
+                    expect(result.sinks.table).deep.equal([expected]);
+                    expect(result.prog.graph.es_opts.aggregations).equal(undefined);
+                });
+        });
+
+        it('reads and writes with -idField "_id"', function() {
+            var _id_point = {time: time, name: '_id_test', _id: 'my__id', value: 20};
+            return test_utils.write([_id_point], {idField: '_id'})
+                .then(function(result) {
+                    return test_utils.verify_import([_.omit(_id_point, '_id')]);
+                })
+                .then(function() {
+                    return test_utils.read({idField: '_id'}, 'name = "_id_test"');
+                })
+                .then(function(result) {
+                    var expected = _.omit(_id_point, '_id');
+                    expected._id = 'my__id';
+
+                    expect(result.sinks.table).deep.equal([expected]);
+                });
+        });
+    });
+
     describe('-type', function() {
         var time1 = new Date().toISOString();
         var time2 = new Date(Date.now() + 1).toISOString();
