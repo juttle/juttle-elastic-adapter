@@ -119,6 +119,24 @@ describe('elastic source', function() {
                 });
             });
 
+            it('writes a point with a giant field', function() {
+                var GIANT_FIELD_LENGTH = 32766;
+                var giant_string = '';
+                for (var i = 0; i <= GIANT_FIELD_LENGTH; i++) {
+                    giant_string += '@';
+                }
+
+                var giant_point = {
+                    time: new Date().toISOString(),
+                    giant_field: giant_string
+                };
+
+                return test_utils.write([giant_point], {id: type})
+                    .then(function(result) {
+                        return test_utils.verify_import([giant_point], type);
+                    });
+            });
+
             it('errors if you write a point without time', function() {
                 var timeless = {value: 1, name: 'dave'};
 
@@ -243,6 +261,42 @@ describe('elastic source', function() {
                 })
                 .then(function(indices) {
                     expect(indices).match(index_regex);
+                });
+        });
+    });
+
+    describe('write edge cases', function() {
+        after(function() {
+            return test_utils.clear_data();
+        });
+
+        it('writes a nested object', function() {
+            var nested_object = {
+                time: new Date().toISOString(),
+                nest: {nested_key: 'nest'},
+                name: 'nest_haver'
+            };
+            return test_utils.write([nested_object])
+                .then(function(result) {
+                    expect(result.errors).deep.equal([]);
+                    return retry(function() {
+                        return test_utils.search()
+                            .then(function(result) {
+                                var hits = _.pluck(result.hits.hits, '_source');
+                                var imported = _.findWhere(hits, {name: 'nest_haver'});
+
+                                expect(imported).exist; // jshint ignore:line
+                                expect(imported.nest).deep.equal(nested_object.nest);
+                            });
+                    });
+                });
+        });
+
+        it('fails to write a point with an _id field', function() {
+            var _id_point = {time: new Date().toISOString(), _id: 'this is broken now'};
+            return test_utils.write([_id_point])
+                .then(function(result) {
+                    expect(result.errors).match(/point rejected by Elasticsearch/);
                 });
         });
     });
