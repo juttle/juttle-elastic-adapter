@@ -104,6 +104,7 @@ Name | Type | Required | Description | Default
 `indexInterval` | string | no | granularity of an index. valid options: `day`, `week`, `month`, `year`, `none` | `none`
 `type` | string | no | [document type](https://www.elastic.co/guide/en/elasticsearch/guide/current/mapping.html) to read from | all types
 `timeField` | string | no | field containing timestamps | `@timestamp`
+`idField` | string | no | if specified, the value of this field in each point emitted by `read elastic` will be the [document ID](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-id-field.html) of the corresponding Elasticsearch document | none
 
 ### Write options
 
@@ -114,6 +115,7 @@ Name | Type | Required | Description | Default
 `indexInterval` | string | no | granularity of an index. valid options: `day` `week`, `month`, `year`, `none` | `none`
 `type` | string | no | document type to write to | `event`
 `timeField` | string | no | field containing timestamps | `@timestamp`
+`idField` | string | no | if specified, the value of this field on each point will be used as the document ID for the corresponding Elasticsearch document and not stored | none
 
 ## Contributing
 
