@@ -36,6 +36,7 @@ var local_client = Promise.promisifyAll(new Elasticsearch.Client({
 
 var test_index = 'my_index';
 var has_index_id = 'has_default_index';
+var has_default_type_id = 'has_default_type';
 
 var config = [{
     id: LOCAL,
@@ -52,6 +53,12 @@ var config = [{
     address: 'localhost',
     port: 9200,
     index: test_index
+},
+{
+    id: has_default_type_id,
+    address: 'localhost',
+    port: 9200,
+    type: 'my_test_type'
 }
 ];
 
@@ -204,6 +211,15 @@ function check_optimization(start, end, id, extra, options) {
     });
 }
 
+function list_types() {
+    return local_client.indices.getMapping({
+        index: TEST_RUN_ID
+    })
+    .then(function(mapping) {
+        return Object.keys(mapping[TEST_RUN_ID].mappings);
+    });
+}
+
 function list_indices() {
     return local_client.indices.getAliases()
         .then(function(result) {
@@ -236,7 +252,9 @@ module.exports = {
     list_indices: list_indices,
     test_index: test_index,
     has_index_id: has_index_id,
+    has_default_type: has_default_type_id,
     test_id: TEST_RUN_ID,
     search: search,
+    list_types: list_types,
     expect_to_fail: expect_to_fail,
 };
