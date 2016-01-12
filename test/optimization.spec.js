@@ -208,6 +208,13 @@ describe('optimization', function() {
                     return test_utils.check_optimization(start, end, type, extra);
                 });
 
+                it('optimizes reduce -every with a lot of buckets and nontrivial time filter', function() {
+                    var start = '2014-09-17T00:00:00.000Z';
+                    var end = '2014-09-20T00:00:00.000Z';
+                    var extra = '| reduce -every :day: count()';
+                    return test_utils.check_optimization(start, end, type, extra);
+                });
+
                 // travis runs outdated ES so we can't test this in the CI
                 it.skip('optimizes reduce -every -on with a lot of buckets', function() {
                     var extra = '| reduce -every :h: -on :5m: count()';
