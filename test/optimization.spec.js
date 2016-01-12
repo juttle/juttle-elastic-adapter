@@ -196,6 +196,24 @@ describe('optimization', function() {
                     return test_utils.check_optimization(start, end, type, extra);
                 });
 
+                it('optimizes reduce -every with a lot of buckets', function() {
+                    var extra = '| reduce -every :h: count()';
+                    return test_utils.check_optimization('10 years ago', 'now', type, extra);
+                });
+
+                it('optimizes reduce -every with a lot of buckets and nontrivial time filter', function() {
+                    var start = '2014-09-17T00:00:00.000Z';
+                    var end = '2014-09-17T14:13:46.000Z';
+                    var extra = '| reduce -every :s: count()';
+                    return test_utils.check_optimization(start, end, type, extra);
+                });
+
+                // travis runs outdated ES so we can't test this in the CI
+                it.skip('optimizes reduce -every -on with a lot of buckets', function() {
+                    var extra = '| reduce -every :h: -on :5m: count()';
+                    return test_utils.check_optimization('10 years ago', 'now', type, extra);
+                });
+
                 it('doesn\'t optimize reduce -acc true', function() {
                     return test_utils.read({from: start, to: end, id: type}, '| reduce -every :s: -acc true by clientip')
                         .then(function(result) {
