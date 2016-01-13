@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/juttle/juttle-elastic-adapter.svg)](https://travis-ci.org/juttle/juttle-elastic-adapter)
 
-The Juttle Elastic Adapter enables reading and writing documents using [Elasticsearch](https://www.elastic.co/products/elasticsearch).
+The Juttle Elastic Adapter enables reading and writing documents using [Elasticsearch](https://www.elastic.co/products/elasticsearch). It works with Elasticsearch version 2.0 and above.
 
 ## Examples
 

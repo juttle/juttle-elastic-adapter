@@ -215,8 +215,7 @@ describe('optimization', function() {
                     return test_utils.check_optimization(start, end, type, extra);
                 });
 
-                // travis runs outdated ES so we can't test this in the CI
-                it.skip('optimizes reduce -every -on with a lot of buckets', function() {
+                it('optimizes reduce -every -on with a lot of buckets', function() {
                     var extra = '| reduce -every :h: -on :5m: count()';
                     return test_utils.check_optimization('10 years ago', 'now', type, extra);
                 });
