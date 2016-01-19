@@ -61,6 +61,35 @@ describe('elastic source limits', function() {
                     expect(result.prog.graph.es_opts.limit).equal(3);
                 });
             });
+
+            it('catches window errors and reports something usable', function() {
+                if (type === 'aws') {
+                    // AWS's ES version doesn't have window overflow errors
+                    return;
+                }
+                function set_window(size) {
+                    return request.putAsync({
+                        url: 'http://localhost:9200/*/_settings',
+                        json: {
+                            index: {
+                                max_result_window: size
+                            }
+                        }
+                    });
+                }
+
+                return set_window(10)
+                .spread(function(res, body) {
+                    return test_utils.read({id: type});
+                })
+                .then(function(result) {
+                    var e = 'Tried to read more than 10 points with the same timestamp, increase the max_result_window setting on the relevant indices to read more';
+                    expect(result.errors).deep.equal([e]);
+                })
+                .finally(function() {
+                    return set_window(10000);
+                });
+            });
         });
     });
 });
