@@ -165,7 +165,14 @@ function verify_import(points, type, indexes) {
                 if (expected.time) {
                     expected.time = new Date(expected.time).toISOString();
                 }
-                expect(_.findWhere(received, expected)).exist; // jshint ignore:line
+                // _.findWhere with deep equality
+                var result = _.find(received, function(point) {
+                    var keys = _.keys(expected);
+                    return _.every(keys, function(key) {
+                        return _.isEqual(point[key], expected[key]);
+                    });
+                });
+                expect(result).exist; // jshint ignore:line
             });
         });
     }, {max_tries: 10});
