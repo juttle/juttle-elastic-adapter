@@ -137,6 +137,19 @@ describe('elastic source', function() {
                     });
             });
 
+            it('writes a point with an array and object field', function() {
+                var point = {
+                    time: new Date().toISOString(),
+                    array: [1,2,3],
+                    object: { key: "val", arr: [1,2,3] }
+                };
+
+                return test_utils.write([point], {id: type})
+                    .then(function(result) {
+                        return test_utils.verify_import([point], type);
+                    });
+            });
+
             it('errors if you write a point without time', function() {
                 var timeless = {value: 1, name: 'dave'};
 
