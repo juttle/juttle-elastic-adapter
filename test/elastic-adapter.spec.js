@@ -37,6 +37,10 @@ describe('elastic source', function() {
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([]);
                     expect(result.errors).deep.equal([]);
+                    return test_utils.read({from: '1 minute ago', to: 'now', id: type}, '| reduce count()');
+                })
+                .then(function(result) {
+                    expect(result.sinks.table).deep.equal([{count: 0}]);
                 });
             });
 
