@@ -13,7 +13,7 @@ addons:
 
 before_install:
     - export CXX="g++-4.8"
-    - npm install juttle@0.2.x
+    - npm install juttle@0.3.x
     - curl -L -O https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/2.1.1/elasticsearch-2.1.1.tar.gz
     - tar -xvf elasticsearch-2.1.1.tar.gz
     - rm elasticsearch-2.1.1.tar.gz
