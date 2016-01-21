@@ -9,6 +9,7 @@ Released 2016-01-21
 
 ### Major Changes
 
+- NOTICE: As part of the update to juttle 0.3.0, the configuration syntax for adapters changed from the name of the module (`"juttle-elastic-adapter"`) to the type of the adapter (`"elastic"`).
 - Implement batched reduce optimization when there are many buckets using date histograms as opposed to a single query per batch. [#49]
 - Added support to set the document type for read and write. [#44]
 - Added support for nested objects in write. [#45]

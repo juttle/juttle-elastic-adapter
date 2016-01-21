@@ -36,7 +36,7 @@ within Juttle. To do so, add the following to your `~/.juttle/config.json` file:
 ```json
 {
     "adapters": {
-        "juttle-elastic-adapter": {
+        "elastic": {
             "address": "localhost",
             "port": 9200
         }
@@ -47,16 +47,16 @@ within Juttle. To do so, add the following to your `~/.juttle/config.json` file:
 To connect to an Elasticsearch instance elsewhere, change the `address`
 and `port` in this configuration.
 
-The value for `juttle-elastic-adapter` can also be an array of Elasticsearch host locations. Give each one a unique `id` field, and `read -id` and `write -id` will use the appropriate host.
+The value for `elastic` can also be an array of Elasticsearch host locations. Give each one a unique `id` field, and `read -id` and `write -id` will use the appropriate host.
 
-The Juttle Elastic Adapter can also make requests to Amazon Elasticsearch Service instances, which requires a little more configuration. To connect to Amazon Elasticsearch Service, an entry in the `juttle-elastic-adapter` config must have `{"type": "aws"}` as well as `region`, `endpoint`, `access_key`, and `secret_key` fields. `access_key` and `secret_key` can also be specified by the environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` respectively.
+The Juttle Elastic Adapter can also make requests to Amazon Elasticsearch Service instances, which requires a little more configuration. To connect to Amazon Elasticsearch Service, an entry in the adapter config must have `{"type": "aws"}` as well as `region`, `endpoint`, `access_key`, and `secret_key` fields. `access_key` and `secret_key` can also be specified by the environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` respectively.
 
 Here's an example Juttle Elastic Adapter configuration that can connect to a local Elasticsearch instance running on port 9200 using `read/write elastic -id "local"` and an Amazon Elasticsearch Service at `search-foo-bar.us-west-2.es.amazonaws.com` using `read/write elastic -id "amazon"`:
 
 ```json
 {
     "adapters": {
-        "juttle-elastic-adapter": [
+        "elastic": [
             {
                 "id": "local",
                 "address": "localhost",
