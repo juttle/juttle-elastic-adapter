@@ -48,46 +48,48 @@ describe('optimization', function() {
                 });
             });
 
-            it('optimizes head', function() {
-                return test_utils.read({id: type}, '| head 3')
-                .then(function(result) {
-                    var expected = points.slice(0, 3);
-                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                    expect(result.prog.graph.es_opts.limit).equal(3);
+            describe('head', function() {
+                it('optimizes head', function() {
+                    return test_utils.read({id: type}, '| head 3')
+                    .then(function(result) {
+                        var expected = points.slice(0, 3);
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                        expect(result.prog.graph.es_opts.limit).equal(3);
+                    });
                 });
-            });
 
-            it('optimizes head with a nontrivial time filter', function() {
-                var start = '2014-09-17T14:13:43.000Z';
-                var end = '2014-09-17T14:13:46.000Z';
-                return test_utils.read({from: start, to: end, id: type}, '| head 2')
-                .then(function(result) {
-                    var expected = points.filter(function(pt) {
-                        return pt.time >= start && pt.time < end;
-                    }).slice(0, 2);
+                it('optimizes head with a nontrivial time filter', function() {
+                    var start = '2014-09-17T14:13:43.000Z';
+                    var end = '2014-09-17T14:13:46.000Z';
+                    return test_utils.read({from: start, to: end, id: type}, '| head 2')
+                    .then(function(result) {
+                        var expected = points.filter(function(pt) {
+                            return pt.time >= start && pt.time < end;
+                        }).slice(0, 2);
 
-                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                    expect(result.prog.graph.es_opts.limit).equal(2);
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                        expect(result.prog.graph.es_opts.limit).equal(2);
+                    });
                 });
-            });
 
-            it('optimizes head with tag filter', function() {
-                return test_utils.read({id: type}, 'clientip = "93.114.45.13" | head 2')
-                .then(function(result) {
-                    var expected = points.filter(function(pt) {
-                        return pt.clientip === '93.114.45.13';
-                    }).slice(0, 2);
+                it('optimizes head with tag filter', function() {
+                    return test_utils.read({id: type}, 'clientip = "93.114.45.13" | head 2')
+                    .then(function(result) {
+                        var expected = points.filter(function(pt) {
+                            return pt.clientip === '93.114.45.13';
+                        }).slice(0, 2);
 
-                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                    expect(result.prog.graph.es_opts.limit).equal(2);
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                        expect(result.prog.graph.es_opts.limit).equal(2);
+                    });
                 });
-            });
 
-            it('optimizes head 0 (returns nothing)', function() {
-                return test_utils.read({id: type}, '| head 0')
-                .then(function(result) {
-                    expect(result.sinks.table).deep.equal([]);
-                    expect(result.prog.graph.es_opts.limit).equal(0);
+                it('optimizes head 0 (returns nothing)', function() {
+                    return test_utils.read({id: type}, '| head 0')
+                    .then(function(result) {
+                        expect(result.sinks.table).deep.equal([]);
+                        expect(result.prog.graph.es_opts.limit).equal(0);
+                    });
                 });
             });
 
