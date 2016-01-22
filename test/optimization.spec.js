@@ -48,13 +48,18 @@ describe('optimization', function() {
                 });
             });
 
+            function expect_graph_has_limit(graph, limit) {
+                expect(graph.es_opts.limit).equal(limit);
+                expect(graph.executed_queries[0].size).equal(limit);
+            }
+
             describe('head', function() {
                 it('optimizes head', function() {
                     return test_utils.read({id: type}, '| head 3')
                     .then(function(result) {
                         var expected = points.slice(0, 3);
                         test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                        expect(result.prog.graph.es_opts.limit).equal(3);
+                        expect_graph_has_limit(result.prog.graph, 3);
                     });
                 });
 
@@ -68,7 +73,7 @@ describe('optimization', function() {
                         }).slice(0, 2);
 
                         test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                        expect(result.prog.graph.es_opts.limit).equal(2);
+                        expect_graph_has_limit(result.prog.graph, 2);
                     });
                 });
 
@@ -80,7 +85,7 @@ describe('optimization', function() {
                         }).slice(0, 2);
 
                         test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                        expect(result.prog.graph.es_opts.limit).equal(2);
+                        expect_graph_has_limit(result.prog.graph, 2);
                     });
                 });
 
@@ -99,7 +104,7 @@ describe('optimization', function() {
                     .then(function(result) {
                         var expected = _.last(points, 4);
                         test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                        expect(result.prog.graph.es_opts.limit).equal(4);
+                        expect_graph_has_limit(result.prog.graph, 4);
                     });
                 });
 
@@ -115,7 +120,7 @@ describe('optimization', function() {
                         var expected = _.last(points_in_range, 4);
 
                         test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                        expect(result.prog.graph.es_opts.limit).equal(4);
+                        expect_graph_has_limit(result.prog.graph, 4);
                     });
                 });
 
@@ -129,7 +134,7 @@ describe('optimization', function() {
                         var expected = _.last(points_in_range, 4);
 
                         test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                        expect(result.prog.graph.es_opts.limit).equal(4);
+                        expect_graph_has_limit(result.prog.graph, 4);
                     });
                 });
 
@@ -137,7 +142,7 @@ describe('optimization', function() {
                     return test_utils.read({id: type}, '| tail 0')
                     .then(function(result) {
                         expect(result.sinks.table).deep.equal([]);
-                        expect(result.prog.graph.es_opts.limit).equal(0);
+                        expect(result.prog.graph.executed_queries.length).equal(0);
                     });
                 });
 
@@ -146,14 +151,14 @@ describe('optimization', function() {
                         .then(function(result) {
                             var expected = _.last(points, 4);
                             test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                            expect(result.prog.graph.es_opts.limit).equal(4);
+                            expect_graph_has_limit(result.prog.graph, 4);
                         });
                 });
 
                 it('doesn\'t optimize over prior head optimization', function() {
                     return test_utils.read({id: type}, '| head 3 | tail 0', function() {
                         expect(result.sinks.table).deep.equal([]);
-                        expect(result.prog.graph.es_opts.limit).equal(3);
+                        expect_graph_has_limit(result.prog.graph, 3);
                     });
                 });
             });
