@@ -376,7 +376,6 @@ describe('optimization', function() {
                 it('doesn\'t optimize reduce -acc true', function() {
                     return test_utils.read({from: start, to: end, id: type}, '| reduce -every :s: -acc true by clientip')
                         .then(function(result) {
-                            expect(result.prog.graph.adapter.es_opts.limit).equal(undefined);
                             expect(result.prog.graph.adapter.es_opts.aggregations).equal(undefined);
                         });
                 });
