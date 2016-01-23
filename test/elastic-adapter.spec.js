@@ -180,7 +180,7 @@ describe('elastic source', function() {
         });
 
         it('writes with -id "b", a broken endpoint', function() {
-            return test_utils.write([{}], {id: 'b'})
+            return test_utils.write([{time: new Date().toISOString()}], {id: 'b'})
             .then(function(result) {
                 expect(result.errors).deep.equal(['insertion failed: Failed to connect to Elasticsearch']);
             });
