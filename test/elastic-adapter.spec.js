@@ -397,7 +397,7 @@ describe('elastic source', function() {
                     var expected = {avg: id_point.value};
                     expected[id_field] = id_point[id_field];
                     expect(result.sinks.table).deep.equal([expected]);
-                    expect(result.prog.graph.es_opts.aggregations).equal(undefined);
+                    expect(result.prog.graph.adapter.es_opts.aggregations).equal(undefined);
                 });
         });
 
