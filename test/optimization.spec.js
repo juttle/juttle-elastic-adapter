@@ -48,13 +48,18 @@ describe('optimization', function() {
                 });
             });
 
+            function expect_graph_has_limit(graph, limit) {
+                expect(graph.es_opts.limit).equal(limit);
+                expect(graph.executed_queries[0].size).equal(limit);
+            }
+
             describe('head', function() {
                 it('optimizes head', function() {
                     return test_utils.read({id: type}, '| head 3')
                     .then(function(result) {
                         var expected = points.slice(0, 3);
                         test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                        expect(result.prog.graph.es_opts.limit).equal(3);
+                        expect_graph_has_limit(result.prog.graph, 3);
                     });
                 });
 
@@ -68,7 +73,7 @@ describe('optimization', function() {
                         }).slice(0, 2);
 
                         test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                        expect(result.prog.graph.es_opts.limit).equal(2);
+                        expect_graph_has_limit(result.prog.graph, 2);
                     });
                 });
 
@@ -80,7 +85,7 @@ describe('optimization', function() {
                         }).slice(0, 2);
 
                         test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                        expect(result.prog.graph.es_opts.limit).equal(2);
+                        expect_graph_has_limit(result.prog.graph, 2);
                     });
                 });
 
@@ -89,6 +94,71 @@ describe('optimization', function() {
                     .then(function(result) {
                         expect(result.sinks.table).deep.equal([]);
                         expect(result.prog.graph.es_opts.limit).equal(0);
+                    });
+                });
+            });
+
+            describe('tail', function() {
+                it('optimizes tail', function() {
+                    return test_utils.read({id: type}, '| tail 4')
+                    .then(function(result) {
+                        var expected = _.last(points, 4);
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                        expect_graph_has_limit(result.prog.graph, 4);
+                    });
+                });
+
+                it('optimizes tail with a nontrivial time filter', function() {
+                    var start = '2014-09-17T14:13:43.000Z';
+                    var end = '2014-09-17T14:13:46.000Z';
+                    return test_utils.read({from: start, to: end, id: type}, '| tail 4')
+                    .then(function(result) {
+                        var points_in_range = points.filter(function(pt) {
+                            return pt.time >= start && pt.time < end;
+                        });
+
+                        var expected = _.last(points_in_range, 4);
+
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                        expect_graph_has_limit(result.prog.graph, 4);
+                    });
+                });
+
+                it('optimizes tail with tag filter', function() {
+                    return test_utils.read({id: type}, 'clientip = "93.114.45.13" | tail 4')
+                    .then(function(result) {
+                        var points_in_range = points.filter(function(pt) {
+                            return pt.clientip === '93.114.45.13';
+                        });
+
+                        var expected = _.last(points_in_range, 4);
+
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                        expect_graph_has_limit(result.prog.graph, 4);
+                    });
+                });
+
+                it('optimizes tail 0 (returns nothing)', function() {
+                    return test_utils.read({id: type}, '| tail 0')
+                    .then(function(result) {
+                        expect(result.sinks.table).deep.equal([]);
+                        expect(result.prog.graph.executed_queries.length).equal(0);
+                    });
+                });
+
+                it('optimizes tail after tail', function() {
+                    return test_utils.read({id: type}, '| tail 5 | tail 4')
+                        .then(function(result) {
+                            var expected = _.last(points, 4);
+                            test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                            expect_graph_has_limit(result.prog.graph, 4);
+                        });
+                });
+
+                it('doesn\'t optimize over prior head optimization', function() {
+                    return test_utils.read({id: type}, '| head 3 | tail 0', function() {
+                        expect(result.sinks.table).deep.equal([]);
+                        expect_graph_has_limit(result.prog.graph, 3);
                     });
                 });
             });

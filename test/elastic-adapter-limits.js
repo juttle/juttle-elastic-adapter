@@ -62,6 +62,16 @@ describe('elastic source limits', function() {
                 });
             });
 
+            it('enforces tail across multiple fetches', function() {
+                var extra = '-fetch_size 2 | tail 4';
+                return test_utils.read({id: type}, extra)
+                .then(function(result) {
+                    var expected = _.last(points, 4);
+                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                    expect(result.prog.graph.es_opts.limit).equal(4);
+                });
+            });
+
             it('catches window errors and reports something usable', function() {
                 if (type === 'aws') {
                     // AWS's ES version doesn't have window overflow errors
