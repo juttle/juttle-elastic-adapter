@@ -62,13 +62,13 @@ describe('elastic source limits', function() {
                 });
             });
 
-            it('enforces tail across multiple fetches', function() {
-                var extra = '-fetch_size 2 | tail 4';
+            it('doesn\'t optimize tail in excess of fetch size', function() {
+                var extra = '-fetch_size 2 | tail 8';
                 return test_utils.read({id: type}, extra)
                 .then(function(result) {
-                    var expected = _.last(points, 4);
+                    var expected = _.last(points, 8);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                    expect(result.prog.graph.es_opts.limit).equal(4);
+                    expect(result.prog.graph.es_opts.limit).equal(undefined);
                 });
             });
 
