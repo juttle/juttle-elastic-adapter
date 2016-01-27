@@ -198,7 +198,7 @@ function check_result_vs_expected_sorting_by(received, expected, field) {
 function check_optimization(start, end, id, extra, options) {
     options = options || {};
     extra = extra || '';
-    var opts = {from: start, to: end, id: id};
+    var opts = {from: start, to: end, id: id, index: options.index};
     var unoptimized_extra = '-optimize false ' + extra;
 
     return Promise.all([
@@ -215,6 +215,7 @@ function check_optimization(start, end, id, extra, options) {
         }
 
         expect(opt_data).deep.equal(unopt_data);
+        return optimized;
     });
 }
 
@@ -248,6 +249,48 @@ function expect_to_fail(promise, message) {
         });
 }
 
+function randInt(max) {
+    return Math.floor(Math.random() * max);
+}
+
+// generates sample data for tests
+// info is an object describing the data you want
+// Possible keys for info:
+// count: tells how many points you want to create, defaults to 10
+// start: the timestamp of the earliest point you want to import
+// interval: the interval between timestamps, in milliseconds
+// tags: an object of the form {tagName1: [tag1Value1, tag1Value2...], tagName2: [tag2Value1,tag2value2,...]}
+//     will create an equal number of points having each value for each tag (+/- 1 for divisibility)
+function generate_sample_data(info) {
+    info = info || {};
+    var sampleData = [];
+
+    var count = info.count || 10;
+    var tags = info.tags || {name: 'test'};
+    var interval = info.interval || 1;
+    var date = (info.start) ? new Date(info.start) : new Date();
+
+    for (var k = 0; k < count; k++) {
+        var pointTags = {};
+
+        _.each(tags, function(values, key) {
+            pointTags[key] = values[k % values.length];
+        }); // jshint ignore:line
+
+        var sampleMetric = {
+            time: date.toISOString(),
+            value: randInt(100)
+        };
+
+        sampleData.push(_.extend(sampleMetric, pointTags));
+
+        date.setTime(date.getTime() + interval);
+    }
+
+    return sampleData;
+}
+
+
 module.exports = {
     read: read,
     write: write,
@@ -264,4 +307,5 @@ module.exports = {
     search: search,
     list_types: list_types,
     expect_to_fail: expect_to_fail,
+    generate_sample_data: generate_sample_data,
 };

@@ -310,6 +310,174 @@ describe('optimization', function() {
                     });
                 });
             });
+
+            describe('calendars', function() {
+                var msInDay = 1000 * 60 * 60 * 24;
+                var msInYear = msInDay * 365;
+                var daily_points_for_two_years = test_utils.generate_sample_data({
+                    count: 365 * 2,
+                    start: new Date(Date.now() - msInYear * 2),
+                    interval: msInDay,
+                    tags: {
+                        name: ['name1', 'name2', 'name3'],
+                        tag: ['tag1', 'tag2', 'tag3', 'tag4']
+                    }
+                });
+
+                var data_start = daily_points_for_two_years[0].time;
+                var now = 'now';
+                var index = test_utils.test_id + 'calendar';
+
+                before(function() {
+                    return Promise.map(daily_points_for_two_years, function(pt) {
+                        return retry(function() {
+                            return test_utils.write([pt], {
+                                index: index,
+                                id: type
+                            })
+                            .then(function(result) {
+                                expect(result.errors).deep.equal([]);
+                            });
+                        });
+                    }, {concurrency: 10})
+                    .then(function() {
+                        return test_utils.verify_import(daily_points_for_two_years, type, index);
+                    });
+                });
+
+                after(function() {
+                    return test_utils.clear_data(type, index);
+                });
+
+                it('optimizes reduce -every :month: count()', function() {
+                    var extra = '| reduce -every :month: count()';
+                    return test_utils.check_optimization(data_start, now, type, extra, {
+                        index: index
+                    })
+                    .then(function(optimized_graph) {
+                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        expect(aggrs.reduce_every).equal('1M');
+                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('month');
+                    });
+                });
+
+                it('optimizes reduce -every :year: count()', function() {
+                    var extra = '| reduce -every :year: count()';
+                    return test_utils.check_optimization(data_start, now, type, extra, {
+                        index: index
+                    })
+                    .then(function(optimized_graph) {
+                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        expect(aggrs.reduce_every).equal('12M');
+                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('year');
+                    });
+                });
+
+                it('does not optimize reduce -every :2 month: count()', function() {
+                    var extra = '| reduce -every :2 month: count()';
+                    return test_utils.check_optimization(data_start, now, type, extra, {
+                        index: index
+                    })
+                    .then(function(optimized_graph) {
+                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        expect(aggrs).equal(undefined);
+                    });
+                });
+
+                it('does not optimizes reduce -every :2 year: count()', function() {
+                    var extra = '| reduce -every :2 year: count()';
+                    return test_utils.check_optimization(data_start, now, type, extra, {
+                        index: index
+                    })
+                    .then(function(optimized_graph) {
+                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        expect(aggrs).equal(undefined);
+                    });
+                });
+
+                it('optimizes reduce -every :month: avg(value)', function() {
+                    var extra = '| reduce -every :month: avg(value)';
+                    return test_utils.check_optimization(data_start, now, type, extra, {
+                        index: index
+                    })
+                    .then(function(optimized_graph) {
+                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        expect(aggrs.reduce_every).equal('1M');
+                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('month');
+                    });
+                });
+
+                it('optimizes reduce -every :year: avg(value)', function() {
+                    var extra = '| reduce -every :year: avg(value)';
+                    return test_utils.check_optimization(data_start, now, type, extra, {
+                        index: index
+                    })
+                    .then(function(optimized_graph) {
+                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        expect(aggrs.reduce_every).equal('12M');
+                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('year');
+                    });
+                });
+
+                it('optimizes reduce -every :month: -on :day 2: avg(value)', function() {
+                    var extra = '| reduce -every :month: -on :day 2: avg(value)';
+                    return test_utils.check_optimization(data_start, now, type, extra, {
+                        index: index
+                    })
+                    .then(function(optimized_graph) {
+                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        expect(aggrs.reduce_every).equal('1M');
+                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('month');
+                    });
+                });
+
+                it('optimizes reduce -every :year: -on :day 2: avg(value)', function() {
+                    var extra = '| reduce -every :year: -on :day 2: avg(value)';
+                    return test_utils.check_optimization(data_start, now, type, extra, {
+                        index: index
+                    })
+                    .then(function(optimized_graph) {
+                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        expect(aggrs.reduce_every).equal('12M');
+                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('year');
+                    });
+                });
+
+                it('optimizes reduce -every :month: -on :2014-01-27: avg(value)', function() {
+                    var extra = '| reduce -every :month: -on :2014-01-27: avg(value)';
+                    return test_utils.check_optimization(data_start, now, type, extra, {
+                        index: index
+                    })
+                    .then(function(optimized_graph) {
+                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        expect(aggrs.reduce_every).equal('1M');
+                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('month');
+                    });
+                });
+
+                it('optimizes reduce -every :year: -on :2014-01-27: avg(value)', function() {
+                    var extra = '| reduce -every :year: -on :2014-01-27: avg(value)';
+                    return test_utils.check_optimization(data_start, now, type, extra, {
+                        index: index
+                    })
+                    .then(function(optimized_graph) {
+                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        expect(aggrs.reduce_every).equal('12M');
+                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('year');
+                    });
+                });
+
+                it('does not optimize reduce -every :year: -on :month: avg(value)', function() {
+                    var extra = '| reduce -every :year: -on :month: avg(value)';
+                    return test_utils.check_optimization(data_start, now, type, extra, {
+                        index: index
+                    })
+                    .then(function(optimized_graph) {
+                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        expect(aggrs).equal(undefined);
+                    });
+                });
+            });
         });
     });
 });
