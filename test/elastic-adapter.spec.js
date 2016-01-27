@@ -299,7 +299,7 @@ describe('elastic source', function() {
                                 var hits = _.pluck(result.hits.hits, '_source');
                                 var imported = _.findWhere(hits, {name: 'nest_haver'});
 
-                                expect(imported).exist; // jshint ignore:line
+                                expect(imported).exist;
                                 expect(imported.nest).deep.equal(nested_object.nest);
                             });
                     });
