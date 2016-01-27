@@ -2,6 +2,7 @@ var _ = require('underscore');
 var Promise = require('bluebird');
 var request = Promise.promisifyAll(require('request'));
 request.async = Promise.promisify(request);
+var retry = require('bluebird-retry');
 var expect = require('chai').expect;
 var util = require('util');
 
@@ -25,10 +26,12 @@ describe('elastic source limits', function() {
             });
 
             before(function() {
-                return test_utils.write(points, {id: type})
-                .then(function() {
-                    return test_utils.verify_import(points, type);
-                });
+                return retry(function() {
+                    return test_utils.write(points, {id: type})
+                    .then(function() {
+                        return test_utils.verify_import(points, type);
+                    });
+                }, {max_tries: 10});
             });
 
             it('executes multiple fetches', function() {

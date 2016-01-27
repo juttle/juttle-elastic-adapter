@@ -172,7 +172,7 @@ function verify_import(points, type, indexes) {
                         return _.isEqual(point[key], expected[key]);
                     });
                 });
-                expect(result).exist; // jshint ignore:line
+                expect(result).exist;
             });
         });
     }, {max_tries: 10});
@@ -275,7 +275,7 @@ function generate_sample_data(info) {
 
         _.each(tags, function(values, key) {
             pointTags[key] = values[k % values.length];
-        }); // jshint ignore:line
+        });
 
         var sampleMetric = {
             time: date.toISOString(),
