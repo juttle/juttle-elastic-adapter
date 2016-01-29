@@ -44,6 +44,13 @@ describe('elastic source', function() {
                 });
             });
 
+            it('comma separated types', function() {
+                return test_utils.read({type: 'event,bananas', id: type})
+                    .then(function(result) {
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
+                    });
+            });
+
             it('reads points from Elastic', function() {
                 return test_utils.read({id: type})
                 .then(function(result) {
