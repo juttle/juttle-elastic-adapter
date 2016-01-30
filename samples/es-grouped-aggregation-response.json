@@ -1,0 +1,156 @@
+{
+    "took": 10,
+    "timed_out": false,
+    "_shards": {
+        "total": 5,
+        "successful": 5,
+        "failed": 0
+    },
+    "hits": {
+        "total": 26,
+        "max_score": 0,
+        "hits": []
+    },
+    "aggregations": {
+        "clientip": {
+            "doc_count_error_upper_bound": 0,
+            "sum_other_doc_count": 0,
+            "buckets": [
+                {
+                    "key": "83.149.9.216",
+                    "doc_count": 23,
+                    "httpversion": {
+                        "doc_count_error_upper_bound": 0,
+                        "sum_other_doc_count": 0,
+                        "buckets": [
+                            {
+                                "key": "1.1",
+                                "doc_count": 20,
+                                "time": {
+                                    "buckets": [
+                                        {
+                                            "key_as_string": "2014-09-17T14:13:42.000Z",
+                                            "key": 1410963222000,
+                                            "doc_count": 5,
+                                            "avg": {
+                                                "value": 236177.2
+                                            }
+                                        },
+                                        {
+                                            "key_as_string": "2014-09-17T14:13:45.000Z",
+                                            "key": 1410963225000,
+                                            "doc_count": 14,
+                                            "avg": {
+                                                "value": 201138.2857142857
+                                            }
+                                        },
+                                        {
+                                            "key_as_string": "2014-09-17T14:13:48.000Z",
+                                            "key": 1410963228000,
+                                            "doc_count": 1,
+                                            "avg": {
+                                                "value": 4254
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "key": "12345",
+                                "doc_count": 3,
+                                "time": {
+                                    "buckets": [
+                                        {
+                                            "key_as_string": "2014-09-17T14:13:42.000Z",
+                                            "key": 1410963222000,
+                                            "doc_count": 2,
+                                            "avg": {
+                                                "value": 187370
+                                            }
+                                        },
+                                        {
+                                            "key_as_string": "2014-09-17T14:13:45.000Z",
+                                            "key": 1410963225000,
+                                            "doc_count": 0,
+                                            "avg": {
+                                                "value": null
+                                            }
+                                        },
+                                        {
+                                            "key_as_string": "2014-09-17T14:13:48.000Z",
+                                            "key": 1410963228000,
+                                            "doc_count": 0,
+                                            "avg": {
+                                                "value": null
+                                            }
+                                        },
+                                        {
+                                            "key_as_string": "2014-09-17T14:13:51.000Z",
+                                            "key": 1410963231000,
+                                            "doc_count": 1,
+                                            "avg": {
+                                                "value": 3638
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "key": "93.114.45.13",
+                    "doc_count": 2,
+                    "httpversion": {
+                        "doc_count_error_upper_bound": 0,
+                        "sum_other_doc_count": 0,
+                        "buckets": [
+                            {
+                                "key": "12345",
+                                "doc_count": 2,
+                                "time": {
+                                    "buckets": [
+                                        {
+                                            "key_as_string": "2014-09-17T14:14:30.000Z",
+                                            "key": 1410963270000,
+                                            "doc_count": 2,
+                                            "avg": {
+                                                "value": 9931.5
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "key": "24.236.252.67",
+                    "doc_count": 1,
+                    "httpversion": {
+                        "doc_count_error_upper_bound": 0,
+                        "sum_other_doc_count": 0,
+                        "buckets": [
+                            {
+                                "key": "12345",
+                                "doc_count": 1,
+                                "time": {
+                                    "buckets": [
+                                        {
+                                            "key_as_string": "2014-09-17T14:14:09.000Z",
+                                            "key": 1410963249000,
+                                            "doc_count": 1,
+                                            "avg": {
+                                                "value": 3638
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+}

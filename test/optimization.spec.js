@@ -27,6 +27,17 @@ var start = new Date(points[0].time).toISOString();
 var end_ms = new Date(_.last(points).time).getTime() + 1;
 var end = new Date(end_ms).toISOString();
 
+function sortBy() {
+    var fields = arguments;
+    return function(array) {
+        return _.sortBy(array, function(pt) {
+            return _.reduce(fields, function(memo, field) {
+                return memo + pt[field];
+            }, '');
+        });
+    };
+}
+
 // Register the adapter
 require('./elastic-test-utils');
 
@@ -200,7 +211,7 @@ describe('optimization', function() {
                         expect(aggregations.count).equal('count');
                         expect(aggregations.grouping).deep.equal(['clientip']);
                         expect(aggregations.es_aggr).deep.equal({
-                            group: {
+                            clientip: {
                                 terms: {
                                     field: 'clientip',
                                     size: 1000000
@@ -253,9 +264,79 @@ describe('optimization', function() {
 
                 it('optimizes no reducers', function() {
                     return test_utils.check_optimization(start, end, type, '| reduce by clientip', {
-                        massage: function(array) {
-                            return _.sortBy(array, 'clientip');
-                        }
+                        massage: sortBy('clientip')
+                    });
+                });
+
+                it('optimizes no reducers 2 groups', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce by clientip, bytes', {
+                        massage: sortBy('clientip', 'bytes')
+                    });
+                });
+
+                it('optimizes no reducers 3 groups', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce by clientip, bytes, httpversion', {
+                        massage: sortBy('bytes', 'httpversion', 'clientip')
+                    });
+                });
+
+                it('optimizes count() with 2 groups', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce count() by clientip, bytes', {
+                        massage: sortBy('bytes', 'clientip')
+                    });
+                });
+
+                it('optimizes count() with 3 groups', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce count() by clientip, bytes, httpversion', {
+                        massage: sortBy('bytes', 'clientip', 'httpversion')
+                    });
+                });
+
+                it('optimizes avg() with 2 groups', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce avg(bytes) by clientip, httpversion', {
+                        massage: sortBy('clientip', 'httpversion')
+                    });
+                });
+
+                it('optimizes avg() with 3 groups', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce avg(bytes) by clientip, httpversion, source_type', {
+                        massage: sortBy('clientip', 'httpversion', 'source_type')
+                    });
+                });
+
+                it('optimizes reduce -every no reducers 2 groups', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: by clientip, bytes', {
+                        massage: sortBy('time', 'clientip', 'bytes')
+                    });
+                });
+
+                it('optimizes reduce -every no reducers 3 groups', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: by clientip, bytes, httpversion', {
+                        massage: sortBy('time', 'bytes', 'httpversion', 'clientip')
+                    });
+                });
+
+                it('optimizes count() -every with 2 groups', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: count() by clientip, bytes', {
+                        massage: sortBy('time', 'bytes', 'clientip')
+                    });
+                });
+
+                it('optimizes count() -every with 3 groups', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: count() by clientip, bytes, httpversion', {
+                        massage: sortBy('time', 'bytes', 'clientip', 'httpversion')
+                    });
+                });
+
+                it('optimizes avg() -every with 2 groups', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: avg(bytes) by clientip, httpversion', {
+                        massage: sortBy('time', 'clientip', 'httpversion')
+                    });
+                });
+
+                it('optimizes avg() -every with 3 groups', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: avg(bytes) by clientip, httpversion, source_type', {
+                        massage: sortBy('time', 'clientip', 'httpversion', 'source_type')
                     });
                 });
 
@@ -300,13 +381,45 @@ describe('optimization', function() {
                         });
                 });
 
-                // travis doesn't have aggkey.groovy so we can't test this in the CI
-                it.skip('optimizes reduce by with missing fields', function() {
+                it('optimizes reduce by with missing field last', function() {
                     var extra = '| reduce count() by clientip, garbage';
                     return test_utils.check_optimization(start, end, type, extra, {
-                        massage: function(array) {
-                            return _.sortBy(array, 'clientip');
-                        }
+                        massage: sortBy('clientip')
+                    });
+                });
+
+                it('optimizes reduce by with missing field first', function() {
+                    var extra = '| reduce count() by garbage, clientip';
+                    return test_utils.check_optimization(start, end, type, extra, {
+                        massage: sortBy('clientip')
+                    });
+                });
+
+                it('optimizes reduce -every by missing field last', function() {
+                    var extra = '| reduce -every :s: count() by clientip, garbage';
+                    return test_utils.check_optimization(start, end, type, extra, {
+                        massage: sortBy('clientip')
+                    });
+                });
+
+                it('optimizes reduce -every by missing field first', function() {
+                    var extra = '| reduce -every :s: count() by garbage, clientip';
+                    return test_utils.check_optimization(start, end, type, extra, {
+                        massage: sortBy('clientip')
+                    });
+                });
+
+                it('optimizes reduce -every by missing field last and avg', function() {
+                    var extra = '| reduce -every :s: avg(bytes) by clientip, garbage';
+                    return test_utils.check_optimization(start, end, type, extra, {
+                        massage: sortBy('clientip')
+                    });
+                });
+
+                it('optimizes reduce -every by missing field first and avg', function() {
+                    var extra = '| reduce -every :s: avg(bytes) by garbage, clientip';
+                    return test_utils.check_optimization(start, end, type, extra, {
+                        massage: sortBy('clientip')
                     });
                 });
             });
@@ -357,7 +470,7 @@ describe('optimization', function() {
                     .then(function(optimized_graph) {
                         var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('1M');
-                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('month');
+                        expect(aggrs.es_aggr.time.date_histogram.interval).equal('month');
                     });
                 });
 
@@ -369,7 +482,7 @@ describe('optimization', function() {
                     .then(function(optimized_graph) {
                         var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('12M');
-                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('year');
+                        expect(aggrs.es_aggr.time.date_histogram.interval).equal('year');
                     });
                 });
 
@@ -403,7 +516,7 @@ describe('optimization', function() {
                     .then(function(optimized_graph) {
                         var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('1M');
-                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('month');
+                        expect(aggrs.es_aggr.time.date_histogram.interval).equal('month');
                     });
                 });
 
@@ -415,7 +528,7 @@ describe('optimization', function() {
                     .then(function(optimized_graph) {
                         var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('12M');
-                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('year');
+                        expect(aggrs.es_aggr.time.date_histogram.interval).equal('year');
                     });
                 });
 
@@ -427,7 +540,7 @@ describe('optimization', function() {
                     .then(function(optimized_graph) {
                         var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('1M');
-                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('month');
+                        expect(aggrs.es_aggr.time.date_histogram.interval).equal('month');
                     });
                 });
 
@@ -439,7 +552,7 @@ describe('optimization', function() {
                     .then(function(optimized_graph) {
                         var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('12M');
-                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('year');
+                        expect(aggrs.es_aggr.time.date_histogram.interval).equal('year');
                     });
                 });
 
@@ -451,7 +564,7 @@ describe('optimization', function() {
                     .then(function(optimized_graph) {
                         var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('1M');
-                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('month');
+                        expect(aggrs.es_aggr.time.date_histogram.interval).equal('month');
                     });
                 });
 
@@ -463,7 +576,7 @@ describe('optimization', function() {
                     .then(function(optimized_graph) {
                         var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('12M');
-                        expect(aggrs.es_aggr._time.date_histogram.interval).equal('year');
+                        expect(aggrs.es_aggr.time.date_histogram.interval).equal('year');
                     });
                 });
 
