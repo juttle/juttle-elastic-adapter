@@ -51,6 +51,17 @@ describe('elastic source', function() {
                 });
             });
 
+            it('default from/to: all data', function() {
+                var program = util.format('read elastic id %s', type);
+                return check_juttle({
+                    program: type
+                })
+                .then(function(result) {
+                    expect(result.prog.graph.adapter.executed_queries[0].from).equal(0);
+                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
+                });
+            });
+
             it('reads with a nontrivial time filter', function() {
                 var start = '2014-09-17T14:13:42.000Z';
                 var end = '2014-09-17T14:13:43.000Z';
