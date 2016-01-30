@@ -168,6 +168,47 @@ describe('elastic source', function() {
                     expect(result.errors).deep.equal([message]);
                 });
             });
+
+            describe('timeField', function() {
+                var time = new Date().toISOString();
+                var my_timed_point = [{time: time, name: 'my_time_test'}];
+                it('reads and writes', function() {
+                    return test_utils.write(my_timed_point, {timeField: 'my_time', id: type})
+                        .then(function() {
+                            return test_utils.verify_import(my_timed_point, type, '*', {timeField: 'my_time'});
+                        })
+                        .then(function() {
+                            return test_utils.search(type);
+                        })
+                        .then(function(es_result) {
+                            var sources = _.pluck(es_result.hits.hits, '_source');
+                            var my_point = _.findWhere(sources, {name: 'my_time_test'});
+                            expect(my_point.my_time).equal(time);
+
+                            var extra = 'name="my_time_test"';
+                            return test_utils.read({timeField: 'my_time', id: type}, extra);
+                        })
+                        .then(function(result) {
+                            expect(result.sinks.table).deep.equal(my_timed_point);
+                            var extra = 'name="my_time_test" | reduce count()';
+                            return test_utils.read({timeField: 'my_time', id: type}, extra);
+                        })
+                        .then(function(result) {
+                            expect(result.sinks.table).deep.equal([{count: 1}]);
+                        });
+                });
+
+                it('optimizes', function() {
+                    var end_ts = new Date(time).getTime() + 1;
+                    var end = new Date(end_ts).toISOString();
+                    var extra = 'name="my_time_test" | reduce -every :ms: count()';
+                    var options = {from: time, to: end, id: type, timeField: 'my_time'};
+                    return test_utils.read(options, extra)
+                        .then(function(result) {
+                            expect(result.sinks.table).deep.equal([{time: end, count: 1}]);
+                        });
+                });
+            });
         });
     });
 
@@ -311,51 +352,6 @@ describe('elastic source', function() {
             return test_utils.write([_id_point])
                 .then(function(result) {
                     expect(result.errors).match(/point rejected by Elasticsearch/);
-                });
-        });
-    });
-
-    describe('timeField', function() {
-        after(function() {
-            return test_utils.clear_data();
-        });
-
-        var time = new Date().toISOString();
-        var my_timed_point = [{time: time, name: 'my_time_test'}];
-        it('reads and writes', function() {
-            return test_utils.write(my_timed_point, {timeField: 'my_time'})
-                .then(function() {
-                    return test_utils.verify_import(my_timed_point);
-                })
-                .then(function() {
-                    return test_utils.search();
-                })
-                .then(function(es_result) {
-                    var sources = _.pluck(es_result.hits.hits, '_source');
-                    var my_point = _.findWhere(sources, {name: 'my_time_test'});
-                    expect(my_point.my_time).equal(time);
-
-                    var extra = 'name="my_time_test"';
-                    return test_utils.read({timeField: 'my_time'}, extra);
-                })
-                .then(function(result) {
-                    expect(result.sinks.table).deep.equal(my_timed_point);
-                    var extra = 'name="my_time_test" | reduce count()';
-                    return test_utils.read({timeField: 'my_time'}, extra);
-                })
-                .then(function(result) {
-                    expect(result.sinks.table).deep.equal([{count: 1}]);
-                });
-        });
-
-        it('optimizes', function() {
-            var end_ts = new Date(time).getTime() + 1;
-            var end = new Date(end_ts).toISOString();
-            var extra = 'name="my_time_test" | reduce -every :ms: count()';
-            var options = {from: time, to: end, id: 'local', timeField: 'my_time'};
-            return test_utils.read(options, extra)
-                .then(function(result) {
-                    expect(result.sinks.table).deep.equal([{time: end, count: 1}]);
                 });
         });
     });
