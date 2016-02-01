@@ -246,11 +246,11 @@ function list_indices() {
         });
 }
 
-function search(type) {
+function search(type, index) {
     var client = type === 'aws' ? aws_client : local_client;
 
     return client.searchAsync({
-        index: '*',
+        index: index || '*',
         type: '',
         size: 10000,
         body: {}

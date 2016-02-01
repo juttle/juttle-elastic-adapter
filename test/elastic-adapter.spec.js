@@ -178,7 +178,7 @@ describe('elastic source', function() {
                             return test_utils.verify_import(my_timed_point, type, '*', {timeField: 'my_time'});
                         })
                         .then(function() {
-                            return test_utils.search(type);
+                            return test_utils.search(type, test_utils.test_id);
                         })
                         .then(function(es_result) {
                             var sources = _.pluck(es_result.hits.hits, '_source');
@@ -206,6 +206,16 @@ describe('elastic source', function() {
                     return test_utils.read(options, extra)
                         .then(function(result) {
                             expect(result.sinks.table).deep.equal([{time: end, count: 1}]);
+                        });
+                });
+
+                it('warns if you clobber a timeField field', function() {
+                    return test_utils.write(my_timed_point, {timeField: 'name', id: type})
+                        .then(function(result) {
+                            var message = util.format('clobbering name value of {"name":"my_time_test"} with %s', time);
+                            expect(result.warnings).deep.equal([message]);
+                            var expected_point = {name: time};
+                            return test_utils.verify_import([expected_point], type, '*', {timeField: 'my_time'});
                         });
                 });
             });
