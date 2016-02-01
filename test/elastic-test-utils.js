@@ -140,7 +140,8 @@ function clear_data(type, indexes) {
     }
 }
 
-function verify_import(points, type, indexes) {
+function verify_import(points, type, indexes, options) {
+    options = options || {};
     var client = type === 'aws' ? aws_client : local_client;
     var request_body = {
         index: indexes || TEST_RUN_ID + '*',
@@ -149,6 +150,16 @@ function verify_import(points, type, indexes) {
             size: 10000
         }
     };
+
+    if (options.timeField !== 'time') {
+        points = points.map(function(pt) {
+            var timeField = options.timeField || '@timestamp';
+            pt = _.clone(pt);
+            pt[timeField] = pt.time;
+            delete pt.time;
+            return pt;
+        });
+    }
 
     return retry(function() {
         return client.searchAsync(request_body)
@@ -235,10 +246,21 @@ function list_indices() {
         });
 }
 
-function search() {
-    return local_client.search({
-        index: '*',
-        size: 10000
+function search(type, index) {
+    var client = type === 'aws' ? aws_client : local_client;
+
+    return client.searchAsync({
+        index: index || '*',
+        type: '',
+        size: 10000,
+        body: {}
+    })
+    .then(function(result) {
+        if (Array.isArray(result)) {
+            result = result[0];
+        }
+
+        return result;
     });
 }
 
