@@ -38,28 +38,29 @@ var test_index = 'my_index';
 var has_index_id = 'has_default_index';
 var has_default_type_id = 'has_default_type';
 
-var config = [{
-    id: LOCAL,
-    address: 'localhost',
-    port: 9200
-},
-{
-    id: 'b',
-    address: 'localhost',
-    port: 9999 // b's config is botched so we can get errors reading from it
-},
-{
-    id: has_index_id,
-    address: 'localhost',
-    port: 9200,
-    index: test_index
-},
-{
-    id: has_default_type_id,
-    address: 'localhost',
-    port: 9200,
-    type: 'my_test_type'
-}
+var config = [
+    {
+        id: LOCAL,
+        address: 'localhost',
+        port: 9200
+    },
+    {
+        id: 'b',
+        address: 'localhost',
+        port: 9999 // b's config is botched so we get errors reading from it
+    },
+    {
+        id: has_index_id,
+        address: 'localhost',
+        port: 9200,
+        index: test_index
+    },
+    {
+        id: has_default_type_id,
+        address: 'localhost',
+        port: 9200,
+        type: 'my_test_type'
+    }
 ];
 
 var aws_client;

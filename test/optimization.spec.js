@@ -7,8 +7,6 @@ var expect = require('chai').expect;
 var util = require('util');
 
 var test_utils = require('./elastic-test-utils');
-var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
-var check_juttle = juttle_test_utils.check_juttle;
 var points = require('./apache-sample');
 
 function format_juttle_result_like_es(pts) {
