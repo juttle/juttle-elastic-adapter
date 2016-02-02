@@ -60,8 +60,8 @@ describe('optimization', function() {
             });
 
             function expect_graph_has_limit(graph, limit) {
-                expect(graph.es_opts.limit).equal(limit);
-                expect(graph.executed_queries[0].size).equal(limit);
+                expect(graph.adapter.es_opts.limit).equal(limit);
+                expect(graph.adapter.executed_queries[0].size).equal(limit);
             }
 
             describe('head', function() {
@@ -104,7 +104,7 @@ describe('optimization', function() {
                     return test_utils.read({id: type}, '| head 0')
                     .then(function(result) {
                         expect(result.sinks.table).deep.equal([]);
-                        expect(result.prog.graph.es_opts.limit).equal(0);
+                        expect(result.prog.graph.adapter.es_opts.limit).equal(0);
                     });
                 });
             });
@@ -153,7 +153,7 @@ describe('optimization', function() {
                     return test_utils.read({id: type}, '| tail 0')
                     .then(function(result) {
                         expect(result.sinks.table).deep.equal([]);
-                        expect(result.prog.graph.executed_queries.length).equal(0);
+                        expect(result.prog.graph.adapter.executed_queries.length).equal(0);
                     });
                 });
 
@@ -167,7 +167,8 @@ describe('optimization', function() {
                 });
 
                 it('doesn\'t optimize over prior head optimization', function() {
-                    return test_utils.read({id: type}, '| head 3 | tail 0', function() {
+                    return test_utils.read({id: type}, '| head 3 | tail 0')
+                    .then(function(result) {
                         expect(result.sinks.table).deep.equal([]);
                         expect_graph_has_limit(result.prog.graph, 3);
                     });
@@ -179,13 +180,13 @@ describe('optimization', function() {
                     return test_utils.read({id: type}, '| reduce count()')
                     .then(function(result) {
                         var first_node = result.prog.graph.head[0];
-                        expect(first_node.procName).equal('elastic_read');
+                        expect(first_node.procName).equal('read');
 
                         var second_node = first_node.out_.default[0].proc;
                         expect(second_node.procName).equal('view');
 
                         expect(result.sinks.table).deep.equal([{count: 30}]);
-                        expect(result.prog.graph.es_opts.aggregations.count).equal('count');
+                        expect(result.prog.graph.adapter.es_opts.aggregations.count).equal('count');
                     });
                 });
 
@@ -193,7 +194,7 @@ describe('optimization', function() {
                     return test_utils.read({id: type}, '| reduce x=count()')
                     .then(function(result) {
                         expect(result.sinks.table).deep.equal([{x: 30}]);
-                        expect(result.prog.graph.es_opts.aggregations.count).equal('x');
+                        expect(result.prog.graph.adapter.es_opts.aggregations.count).equal('x');
                     });
                 });
 
@@ -206,7 +207,7 @@ describe('optimization', function() {
                             {clientip: '24.236.252.67', count: 1}
                         ]);
 
-                        var aggregations = result.prog.graph.es_opts.aggregations;
+                        var aggregations = result.prog.graph.adapter.es_opts.aggregations;
 
                         expect(aggregations.count).equal('count');
                         expect(aggregations.grouping).deep.equal(['clientip']);
@@ -376,8 +377,7 @@ describe('optimization', function() {
                 it('doesn\'t optimize reduce -acc true', function() {
                     return test_utils.read({from: start, to: end, id: type}, '| reduce -every :s: -acc true by clientip')
                         .then(function(result) {
-                            expect(result.prog.graph.es_opts.limit).equal(undefined);
-                            expect(result.prog.graph.es_opts.aggregations).equal(undefined);
+                            expect(result.prog.graph.adapter.es_opts.aggregations).equal(undefined);
                         });
                 });
 
@@ -468,7 +468,7 @@ describe('optimization', function() {
                         index: index
                     })
                     .then(function(optimized_graph) {
-                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        var aggrs = optimized_graph.prog.graph.adapter.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('1M');
                         expect(aggrs.es_aggr.time.date_histogram.interval).equal('month');
                     });
@@ -480,7 +480,7 @@ describe('optimization', function() {
                         index: index
                     })
                     .then(function(optimized_graph) {
-                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        var aggrs = optimized_graph.prog.graph.adapter.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('12M');
                         expect(aggrs.es_aggr.time.date_histogram.interval).equal('year');
                     });
@@ -492,7 +492,7 @@ describe('optimization', function() {
                         index: index
                     })
                     .then(function(optimized_graph) {
-                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        var aggrs = optimized_graph.prog.graph.adapter.es_opts.aggregations;
                         expect(aggrs).equal(undefined);
                     });
                 });
@@ -503,7 +503,7 @@ describe('optimization', function() {
                         index: index
                     })
                     .then(function(optimized_graph) {
-                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        var aggrs = optimized_graph.prog.graph.adapter.es_opts.aggregations;
                         expect(aggrs).equal(undefined);
                     });
                 });
@@ -514,7 +514,7 @@ describe('optimization', function() {
                         index: index
                     })
                     .then(function(optimized_graph) {
-                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        var aggrs = optimized_graph.prog.graph.adapter.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('1M');
                         expect(aggrs.es_aggr.time.date_histogram.interval).equal('month');
                     });
@@ -526,7 +526,7 @@ describe('optimization', function() {
                         index: index
                     })
                     .then(function(optimized_graph) {
-                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        var aggrs = optimized_graph.prog.graph.adapter.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('12M');
                         expect(aggrs.es_aggr.time.date_histogram.interval).equal('year');
                     });
@@ -538,7 +538,7 @@ describe('optimization', function() {
                         index: index
                     })
                     .then(function(optimized_graph) {
-                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        var aggrs = optimized_graph.prog.graph.adapter.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('1M');
                         expect(aggrs.es_aggr.time.date_histogram.interval).equal('month');
                     });
@@ -550,7 +550,7 @@ describe('optimization', function() {
                         index: index
                     })
                     .then(function(optimized_graph) {
-                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        var aggrs = optimized_graph.prog.graph.adapter.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('12M');
                         expect(aggrs.es_aggr.time.date_histogram.interval).equal('year');
                     });
@@ -562,7 +562,7 @@ describe('optimization', function() {
                         index: index
                     })
                     .then(function(optimized_graph) {
-                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        var aggrs = optimized_graph.prog.graph.adapter.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('1M');
                         expect(aggrs.es_aggr.time.date_histogram.interval).equal('month');
                     });
@@ -574,7 +574,7 @@ describe('optimization', function() {
                         index: index
                     })
                     .then(function(optimized_graph) {
-                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        var aggrs = optimized_graph.prog.graph.adapter.es_opts.aggregations;
                         expect(aggrs.reduce_every).equal('12M');
                         expect(aggrs.es_aggr.time.date_histogram.interval).equal('year');
                     });
@@ -586,7 +586,7 @@ describe('optimization', function() {
                         index: index
                     })
                     .then(function(optimized_graph) {
-                        var aggrs = optimized_graph.prog.graph.es_opts.aggregations;
+                        var aggrs = optimized_graph.prog.graph.adapter.es_opts.aggregations;
                         expect(aggrs).equal(undefined);
                     });
                 });

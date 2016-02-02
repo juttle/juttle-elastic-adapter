@@ -61,7 +61,7 @@ describe('elastic source limits', function() {
                 .then(function(result) {
                     var expected = points.slice(0, 3);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                    expect(result.prog.graph.es_opts.limit).equal(3);
+                    expect(result.prog.graph.adapter.es_opts.limit).equal(3);
                 });
             });
 
@@ -71,7 +71,7 @@ describe('elastic source limits', function() {
                 .then(function(result) {
                     var expected = _.last(points, 8);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                    expect(result.prog.graph.es_opts.limit).equal(undefined);
+                    expect(result.prog.graph.adapter.es_opts.limit).equal(100000);
                 });
             });
 

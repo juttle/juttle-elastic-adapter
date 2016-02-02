@@ -85,7 +85,7 @@ var adapter = Elastic(config, Juttle);
 Juttle.adapters.register(adapter.name, adapter);
 
 function _option_is_moment(key) {
-    return key === 'from' || key === 'to';
+    return key === 'from' || key === 'to' || key === 'lag';
 }
 
 function options_from_object(options) {
@@ -116,7 +116,7 @@ var DEFAULT_TEST_READ_OPTIONS = {
     index: TEST_RUN_ID
 };
 
-function read(options, extra) {
+function read(options, extra, deactivateAfter) {
     options = options || {};
     _.defaults(options, DEFAULT_TEST_READ_OPTIONS);
     extra = extra || '';
@@ -127,8 +127,9 @@ function read(options, extra) {
     var read_program = util.format(program, opts, extra);
 
     return check_juttle({
-        program: read_program
-    });
+        program: read_program,
+        realtime: !!deactivateAfter
+    }, deactivateAfter);
 }
 
 function clear_data(type, indexes) {
@@ -288,7 +289,7 @@ function generate_sample_data(info) {
     var sampleData = [];
 
     var count = info.count || 10;
-    var tags = info.tags || {name: 'test'};
+    var tags = info.tags || {name: ['test']};
     var interval = info.interval || 1;
     var date = (info.start) ? new Date(info.start) : new Date();
 

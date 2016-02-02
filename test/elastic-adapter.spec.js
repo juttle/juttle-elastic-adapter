@@ -41,6 +41,11 @@ describe('elastic source', function() {
                 })
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([{count: 0}]);
+                    return test_utils.read({index: 'no_such_index', id: type});
+                })
+                .then(function(result) {
+                    expect(result.sinks.table).deep.equal([]);
+                    expect(result.errors).deep.equal([]);
                 });
             });
 
@@ -48,6 +53,16 @@ describe('elastic source', function() {
                 return test_utils.read({id: type})
                 .then(function(result) {
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
+                });
+            });
+
+            it('default from/to: no data', function() {
+                var program = util.format('read elastic -id "%s"', type);
+                return check_juttle({
+                    program: program
+                })
+                .then(function(result) {
+                    expect(result.sinks.table).deep.equal([]);
                 });
             });
 
@@ -397,7 +412,7 @@ describe('elastic source', function() {
                     var expected = {avg: id_point.value};
                     expected[id_field] = id_point[id_field];
                     expect(result.sinks.table).deep.equal([expected]);
-                    expect(result.prog.graph.es_opts.aggregations).equal(undefined);
+                    expect(result.prog.graph.adapter.es_opts.aggregations).equal(undefined);
                 });
         });
 
