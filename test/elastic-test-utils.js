@@ -37,6 +37,7 @@ var local_client = Promise.promisifyAll(new Elasticsearch.Client({
 var test_index = 'my_index';
 var has_index_id = 'has_default_index';
 var has_default_type_id = 'has_default_type';
+var aws_has_default_type_id = 'aws_has_default_type';
 
 var config = [{
     id: LOCAL,
@@ -74,7 +75,15 @@ if (_.contains(modes, AWS)) {
 
     config.push({
         id: AWS,
-        type: 'aws',
+        aws: true,
+        endpoint: AWS_HOST,
+        region: AWS_REGION
+    });
+
+    config.push({
+        id: aws_has_default_type_id,
+        aws: true,
+        type: 'aws_default_type',
         endpoint: AWS_HOST,
         region: AWS_REGION
     });
@@ -326,6 +335,7 @@ module.exports = {
     test_index: test_index,
     has_index_id: has_index_id,
     has_default_type: has_default_type_id,
+    aws_has_default_type_id: aws_has_default_type_id,
     test_id: TEST_RUN_ID,
     search: search,
     list_types: list_types,
