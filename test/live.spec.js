@@ -33,7 +33,7 @@ describe('elastic source', function() {
                 points_to_expect = points_to_expect || points_to_write;
                 var last_time = new Date(_.last(points_to_write).time).getTime();
                 var deactivateAfter = last_time - Date.now() + 5000;
-                var options = {id: type, from: 0, to: 'end'};
+                var options = {id: type, from: 0, to: 'end', lag: '2s'};
 
                 var read = test_utils.read(options, '', deactivateAfter)
                 .then(function(result) {

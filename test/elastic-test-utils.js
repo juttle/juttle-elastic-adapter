@@ -85,7 +85,7 @@ var adapter = Elastic(config, Juttle);
 Juttle.adapters.register(adapter.name, adapter);
 
 function _option_is_moment(key) {
-    return key === 'from' || key === 'to';
+    return key === 'from' || key === 'to' || key === 'lag';
 }
 
 function options_from_object(options) {

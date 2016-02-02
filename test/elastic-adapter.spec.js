@@ -41,6 +41,11 @@ describe('elastic source', function() {
                 })
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([{count: 0}]);
+                    return test_utils.read({index: 'no_such_index', id: type});
+                })
+                .then(function(result) {
+                    expect(result.sinks.table).deep.equal([]);
+                    expect(result.errors).deep.equal([]);
                 });
             });
 
@@ -51,14 +56,13 @@ describe('elastic source', function() {
                 });
             });
 
-            it('default from/to: all data', function() {
-                var program = util.format('read elastic id %s', type);
+            it('default from/to: no data', function() {
+                var program = util.format('read elastic -id "%s"', type);
                 return check_juttle({
-                    program: type
+                    program: program
                 })
                 .then(function(result) {
-                    expect(result.prog.graph.adapter.executed_queries[0].from).equal(0);
-                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
+                    expect(result.sinks.table).deep.equal([]);
                 });
             });
 
