@@ -234,6 +234,79 @@ describe('elastic source', function() {
                         });
                 });
             });
+
+            describe('-type', function() {
+                var time1 = new Date().toISOString();
+                var time2 = new Date(Date.now() + 1).toISOString();
+                var type1 = 'type1';
+                var type2 = 'type2';
+                var point1 = {name: 'type1_test', time: time1};
+                var point2 = {name: 'type2_test', time: time2};
+
+                before(function() {
+                    return test_utils.clear_data(type);
+                });
+
+                it('writes', function() {
+                    return test_utils.write([point1], {type: type1, id: type})
+                        .then(function() {
+                            return test_utils.write([point2], {type: type2, id: type});
+                        })
+                        .then(function() {
+                            return test_utils.verify_import([point1, point2], type);
+                        })
+                        .then(function() {
+                            if (type === 'aws') { return; }
+
+                            return test_utils.list_types()
+                                .then(function(types) {
+                                    expect(types).contain(type1);
+                                    expect(types).contain(type2);
+                                });
+                        });
+                });
+
+                it('reads', function() {
+                    return test_utils.read({type: type1, id: type})
+                        .then(function(result) {
+                            expect(result.sinks.table).deep.equal([point1]);
+                            return test_utils.read({type: type2, id: type}, '| reduce count()');
+                        })
+                        .then(function(result) {
+                            expect(result.sinks.table).deep.equal([{count: 1}]);
+                        });
+                });
+
+                it('default - reads all types', function() {
+                    return test_utils.read({id: type})
+                        .then(function(result) {
+                            expect(result.sinks.table).deep.equal([point1, point2]);
+                        });
+                });
+
+                it('reads and writes with a configured default type', function() {
+                    var point = {time: new Date().toISOString(), name: 'configured default'};
+                    var id = type === 'aws' ? test_utils.aws_has_default_type_id :
+                        test_utils.has_default_type;
+                    return test_utils.write([point], {id: id})
+                        .then(function() {
+                            return test_utils.verify_import([point], type);
+                        })
+                        .then(function() {
+                            if (type === 'aws') { return; }
+                            return test_utils.list_types()
+                                .then(function(types) {
+                                    expect(types).contain('my_test_type');
+                                });
+                        })
+                        .then(function() {
+                            return test_utils.read({id: id});
+                        })
+                        .then(function(result) {
+                            expect(result.sinks.table).deep.equal([point]);
+                        });
+                });
+            });
         });
     });
 
@@ -430,72 +503,6 @@ describe('elastic source', function() {
                     expected._id = 'my__id';
 
                     expect(result.sinks.table).deep.equal([expected]);
-                });
-        });
-    });
-
-    describe('-type', function() {
-        var time1 = new Date().toISOString();
-        var time2 = new Date(Date.now() + 1).toISOString();
-        var type1 = 'type1';
-        var type2 = 'type2';
-        var point1 = {name: 'type1_test', time: time1};
-        var point2 = {name: 'type2_test', time: time2};
-
-        after(function() {
-            return test_utils.clear_data();
-        });
-
-        it('writes', function() {
-            return test_utils.write([point1], {type: type1})
-                .then(function() {
-                    return test_utils.write([point2], {type: type2});
-                })
-                .then(function() {
-                    return test_utils.verify_import([point1, point2]);
-                })
-                .then(function() {
-                    return test_utils.list_types();
-                })
-                .then(function(types) {
-                    expect(types).contain(type1);
-                    expect(types).contain(type2);
-                });
-        });
-
-        it('reads', function() {
-            return test_utils.read({type: type1})
-                .then(function(result) {
-                    expect(result.sinks.table).deep.equal([point1]);
-                    return test_utils.read({type: type2}, '| reduce count()');
-                })
-                .then(function(result) {
-                    expect(result.sinks.table).deep.equal([{count: 1}]);
-                });
-        });
-
-        it('default - reads all types', function() {
-            return test_utils.read()
-                .then(function(result) {
-                    expect(result.sinks.table).deep.equal([point1, point2]);
-                });
-        });
-
-        it('reads and writes with a configured default type', function() {
-            var point = {time: new Date().toISOString(), name: 'configured default'};
-            return test_utils.write([point], {id: test_utils.has_default_type})
-                .then(function() {
-                    return test_utils.verify_import([point]);
-                })
-                .then(function() {
-                    return test_utils.list_types();
-                })
-                .then(function(types) {
-                    expect(types).contain('my_test_type');
-                    return test_utils.read({id: test_utils.has_default_type});
-                })
-                .then(function(result) {
-                    expect(result.sinks.table).deep.equal([point]);
                 });
         });
     });
