@@ -56,6 +56,18 @@ describe('elastic source', function() {
                 });
             });
 
+            it('filter tag in []', function() {
+                var filter = 'bytes in [8095, 6146]';
+                return test_utils.read({id: type}, filter)
+                    .then(function(result) {
+                        var expected = points.filter(function(pt) {
+                            return pt.bytes === 8095 || pt.bytes === 6146;
+                        });
+
+                        expect(result.sinks.table).deep.equal(expected);
+                    });
+            });
+
             it('default from/to: no data', function() {
                 var program = util.format('read elastic -id "%s"', type);
                 return check_juttle({
