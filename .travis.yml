@@ -24,3 +24,4 @@ before_script:
 
 script:
     - npm test
+    - npm run -s check-coverage

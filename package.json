@@ -13,7 +13,8 @@
   "main": "lib/index.js",
   "repository": "juttle/juttle-elastic-adapter",
   "scripts": {
-    "test": "eslint **/*.js && mocha"
+    "test": "eslint **/*.js && node_modules/.bin/istanbul cover -x 'lib/parser.js' node_modules/.bin/_mocha",
+    "check-coverage": "node_modules/.bin/istanbul check-coverage"
   },
   "dependencies": {
     "aws-es": "juttle/aws-es.git",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "chai": "^3.4.1",
+    "istanbul": "^0.4.2",
     "mocha": "^2.3.4",
     "uuid": "^2.0.1"
   },
