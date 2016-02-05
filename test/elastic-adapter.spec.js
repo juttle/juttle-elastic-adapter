@@ -418,42 +418,6 @@ describe('elastic source', function() {
         });
     });
 
-    describe('write edge cases', function() {
-        after(function() {
-            return test_utils.clear_data();
-        });
-
-        it('writes a nested object', function() {
-            var nested_object = {
-                time: new Date().toISOString(),
-                nest: {nested_key: 'nest'},
-                name: 'nest_haver'
-            };
-            return test_utils.write([nested_object])
-                .then(function(result) {
-                    expect(result.errors).deep.equal([]);
-                    return retry(function() {
-                        return test_utils.search()
-                            .then(function(result) {
-                                var hits = _.pluck(result.hits.hits, '_source');
-                                var imported = _.findWhere(hits, {name: 'nest_haver'});
-
-                                expect(imported).exist;
-                                expect(imported.nest).deep.equal(nested_object.nest);
-                            });
-                    });
-                });
-        });
-
-        it('fails to write a point with an _id field', function() {
-            var _id_point = {time: new Date().toISOString(), _id: 'this is broken now'};
-            return test_utils.write([_id_point])
-                .then(function(result) {
-                    expect(result.errors).match(/point rejected by Elasticsearch/);
-                });
-        });
-    });
-
     describe('idField', function() {
         var time = new Date().toISOString();
         var id_point = {time: time, name: 'id_test', id_field: 'my_id', value: 10};

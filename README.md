@@ -132,6 +132,8 @@ Name | Type | Required | Description | Default
 `type` | string | no | document type to write to | `event`
 `timeField` | string | no | field containing timestamps | `@timestamp`
 `idField` | string | no | if specified, the value of this field on each point will be used as the document ID for the corresponding Elasticsearch document and not stored | none
+`chunkSize` | number | no | buffer points until `chunkSize` have been received or the program ends, then flush | 1024
+`concurrency` | number | no | number of concurrent bulk requests to make to Elasticsearch (each inserts `<= chunkSize` points) | 10
 
 ### Optimizations
 
@@ -149,7 +151,7 @@ This program will form an ES query that asks it do count the documents in `scrat
 _Less optimized example_
 
 ```juttle
-read elastic -last :1 hour: name = 'test' 
+read elastic -last :1 hour: name = 'test'
 | put threshold = 42
 | filter value > threshold
 ```
