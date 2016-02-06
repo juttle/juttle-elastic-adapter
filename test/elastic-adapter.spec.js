@@ -184,6 +184,12 @@ describe('elastic source', function() {
                 });
             });
 
+            it('rejects regex filters', function() {
+                var failing_read = test_utils.read({id: type}, 'clientip =~ /2/');
+                var message = 'read elastic filters cannot contain regular expressions';
+
+                return test_utils.expect_to_fail(failing_read, message);
+            });
 
             it('warns if you filter on an analyzed field', function() {
                 return retry(function() {
