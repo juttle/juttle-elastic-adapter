@@ -56,14 +56,14 @@ describe('elastic source', function() {
                 });
             });
 
-            it('default from/to: no data', function() {
+            it('default from/to: error', function() {
                 var program = util.format('read elastic -id "%s"', type);
-                return check_juttle({
+                var failing_read = check_juttle({
                     program: program
-                })
-                .then(function(result) {
-                    expect(result.sinks.table).deep.equal([]);
                 });
+                var message = '-from, -to, or -last must be specified';
+
+                return test_utils.expect_to_fail(failing_read, message);
             });
 
             it('reads with a nontrivial time filter', function() {
