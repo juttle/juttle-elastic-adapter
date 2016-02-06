@@ -93,15 +93,11 @@ To read or write data, the adapter has to know the names of the indices storing 
 
 You can choose indices to read and write from with the `-index` option, or you can specify an `index` for each configured Elasticsearch instance the adapter is connected to.
 
-For schemas such as [Logstash](https://www.elastic.co/products/logstash) that create indices at regular intervals, the adapter supports an `indexInterval` option. Valid values for `indexInterval` are `day`, `week`, `month`, `year`, and `none`. With `day`, the adapter will use indices formatted `${index}${yyyy.mm.dd}`. With `week`, it will use `${index}${yyyy.ww}`, where `ww` ranges from 01 to 53 numbering the weeks in a year. With `month`, it will use `${index}${yyyy.mm}`, and with `year`, it will use `${index}${yyyy}`. With `none`, the default, it will use just one index entirely specified by `index`. When using `indexInterval`, `index` should be the non-date portion of each index followed by `*`.
+For schemas that create indices at regular intervals, the adapter supports an `indexInterval` option. Valid values for `indexInterval` are `day`, `week`, `month`, `year`, and `none`. With `day`, the adapter will use indices formatted `${index}${yyyy.mm.dd}`. With `week`, it will use `${index}${yyyy.ww}`, where `ww` ranges from 01 to 53 numbering the weeks in a year. With `month`, it will use `${index}${yyyy.mm}`, and with `year`, it will use `${index}${yyyy}`. With `none`, the default, it will use just one index entirely specified by `index`. When using `indexInterval`, `index` should be the non-date portion of each index followed by `*`.
 
 Lastly, the adapter expects all documents in Elasticsearch to have a field containing a timestamp. By default, it expects this to be the `@timestamp` field. This is configurable with the `-timeField` option to `read` and `write`.
 
-#### Logstash ####
-
-Let's look at Logstash for an example of configuring a schema. Logstash creates daily indices that look like `logstash-2016.01.05`. By default, the adapter reads from all indices, so if you want to read from only Logstash's indices, use `logstash-*` for the `index` option.
-
-If you have many days' worth of data, Logstash will create many indices. Reading from many indices can be slow in Elasticsearch. To speed things up in this case, `read elastic` can narrow its search to only the days it needs for its query. To get this behavior, use `-indexInterval "day"`. Also, `write elastic` requires `-indexInterval "day"` for writing into daily indices.
+Specifics of using the default [Logstash](https://www.elastic.co/products/logstash) schema are described [here](./docs/logstash.md), including handling of analyzed vs not_analyzed string fields.
 
 ## Usage
 
