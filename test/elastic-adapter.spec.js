@@ -184,6 +184,58 @@ describe('elastic source', function() {
                 });
             });
 
+
+            it('warns if you filter on an analyzed field', function() {
+                return retry(function() {
+                    return test_utils.read({id: type}, 'request = "/presentations/logstash-monitorama-2013/images/sad-medic.png"')
+                        .then(function(result) {
+                            var warning = `field "request" is analyzed in type ` +
+                                `"event" in index "${test_utils.test_id}", results may be unexpected`;
+                            expect(result.warnings).deep.equal([warning]);
+                            expect(result.errors).deep.equal([]);
+                            expect(result.sinks.table).deep.equal([]);
+                        });
+                });
+            });
+
+            it('warns if you reduce by an analyzed field', function() {
+                return retry(function() {
+                    return test_utils.read({id: type}, '| reduce by request')
+                        .then(function(result) {
+                            var warning = `field "request" is analyzed in type ` +
+                                `"event" in index "${test_utils.test_id}", results may be unexpected`;
+                            expect(result.warnings).deep.equal([warning]);
+                            expect(result.errors).deep.equal([]);
+                        });
+                });
+            });
+
+            it('warns if you filter on an unknown field', function() {
+                return retry(function() {
+                    return test_utils.read({id: type}, 'bananas = "pajamas"')
+                        .then(function(result) {
+                            var warning = `index "${test_utils.test_id}" has no ` +
+                                `known property "bananas" for type "event"`;
+                            expect(result.warnings).deep.equal([warning]);
+                            expect(result.errors).deep.equal([]);
+                            expect(result.sinks.table).deep.equal([]);
+                        });
+                });
+            });
+
+            it('warns if you reduce by an unknown field', function() {
+                return retry(function() {
+                    return test_utils.read({id: type}, '| reduce by bananas')
+                        .then(function(result) {
+                            var warning = `index "${test_utils.test_id}" has no ` +
+                                `known property "bananas" for type "event"`;
+                            expect(result.warnings).deep.equal([warning]);
+                            expect(result.errors).deep.equal([]);
+                            expect(result.sinks.table).deep.equal([{bananas: null}]);
+                        });
+                });
+            });
+
             describe('timeField', function() {
                 var time = new Date().toISOString();
                 var my_timed_point = [{time: time, name: 'my_time_test'}];
@@ -232,6 +284,17 @@ describe('elastic source', function() {
                             var expected_point = {name: time};
                             return test_utils.verify_import([expected_point], type, '*', {timeField: 'my_time'});
                         });
+                });
+
+                it('warns if you read a nonexistent timefield', function() {
+                    return retry(function() {
+                        return test_utils.read({id: type, timeField: 'bananas'})
+                            .then(function(result) {
+                                var warning = `index "${test_utils.test_id}" has no ` +
+                                    `known property "bananas" for type "event"`;
+                                expect(result.warnings).deep.equal([warning]);
+                            });
+                    });
                 });
             });
 
