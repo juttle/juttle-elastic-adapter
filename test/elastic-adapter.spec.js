@@ -148,29 +148,11 @@ describe('elastic source', function() {
                 });
             });
 
-            it('warns if you filter on an analyzed field', function() {
-                return retry(function() {
-                    return test_utils.read({id: type}, 'request = "/presentations/logstash-monitorama-2013/images/sad-medic.png"')
-                        .then(function(result) {
-                            var warning = `field "request" is analyzed in type ` +
-                                `"event" in index "${test_utils.test_id}", results may be unexpected`;
-                            expect(result.warnings).deep.equal([warning]);
-                            expect(result.errors).deep.equal([]);
-                            expect(result.sinks.table).deep.equal([]);
-                        });
-                });
-            });
+            it('rejects regex filters', function() {
+                var failing_read = test_utils.read({id: type}, 'clientip =~ /2/');
+                var message = 'read elastic filters cannot contain regular expressions';
 
-            it('warns if you reduce by an analyzed field', function() {
-                return retry(function() {
-                    return test_utils.read({id: type}, '| reduce by request')
-                        .then(function(result) {
-                            var warning = `field "request" is analyzed in type ` +
-                                `"event" in index "${test_utils.test_id}", results may be unexpected`;
-                            expect(result.warnings).deep.equal([warning]);
-                            expect(result.errors).deep.equal([]);
-                        });
-                });
+                return test_utils.expect_to_fail(failing_read, message);
             });
 
             it('warns if you filter on an unknown field', function() {

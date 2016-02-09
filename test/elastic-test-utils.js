@@ -323,6 +323,14 @@ function generate_sample_data(info) {
     return sampleData;
 }
 
+function create_index(instance_type, index) {
+    var options = {index: index};
+    if (instance_type === 'aws') {
+        return aws_client.createIndexAsync(options);
+    } else {
+        return local_client.indices.create(options);
+    }
+}
 
 module.exports = {
     read: read,
@@ -342,4 +350,5 @@ module.exports = {
     list_types: list_types,
     expect_to_fail: expect_to_fail,
     generate_sample_data: generate_sample_data,
+    create_index: create_index,
 };
