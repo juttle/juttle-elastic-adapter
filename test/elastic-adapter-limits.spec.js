@@ -8,9 +8,6 @@ var expect = require('chai').expect;
 var test_utils = require('./elastic-test-utils');
 var points = require('./apache-sample');
 
-// Register the adapter
-require('./elastic-test-utils');
-
 var modes = test_utils.modes;
 
 describe('elastic source limits', function() {

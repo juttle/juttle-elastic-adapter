@@ -3,9 +3,6 @@ var expect = require('chai').expect;
 
 var test_utils = require('./elastic-test-utils');
 
-// Register the adapter
-require('./elastic-test-utils');
-
 var modes = test_utils.modes;
 
 function generate_live_data() {

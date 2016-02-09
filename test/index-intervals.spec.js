@@ -4,9 +4,6 @@ var expect = require('chai').expect;
 var test_utils = require('./elastic-test-utils');
 var points = require('./apache-sample');
 
-// Register the adapter
-require('./elastic-test-utils');
-
 describe('index intervals', function() {
     this.timeout(300000);
 

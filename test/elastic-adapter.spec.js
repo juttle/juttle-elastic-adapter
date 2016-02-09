@@ -8,9 +8,6 @@ var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
 var check_juttle = juttle_test_utils.check_juttle;
 var points = require('./apache-sample');
 
-// Register the adapter
-require('./elastic-test-utils');
-
 var modes = test_utils.modes;
 
 describe('elastic source', function() {

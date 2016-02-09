@@ -34,9 +34,6 @@ function sortBy() {
     };
 }
 
-// Register the adapter
-require('./elastic-test-utils');
-
 var modes = test_utils.modes;
 
 describe('optimization', function() {
