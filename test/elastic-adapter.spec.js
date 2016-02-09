@@ -7,13 +7,31 @@ var test_utils = require('./elastic-test-utils');
 var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
 var check_juttle = juttle_test_utils.check_juttle;
 var points = require('./apache-sample');
+var DYNAMIC_MAPPING_SETTINGS = require('../lib/dynamic-mapping-settings');
+var elastic = require('../lib/elastic');
 
 var modes = test_utils.modes;
+
+function assert_not_analyzed(settings) {
+    expect(settings.dynamic_templates)
+        .deep.equal(DYNAMIC_MAPPING_SETTINGS.dynamic_templates);
+
+    var had_not_analyzed = false;
+    _.each(settings.properties, function(property) {
+        if (property.type === 'string') {
+            had_not_analyzed = true;
+            expect(property.index).equal('not_analyzed');
+        }
+    });
+
+    expect(had_not_analyzed).equal(true);
+}
 
 describe('elastic source', function() {
     modes.forEach(function(type) {
         describe('basic functionality -- ' + type, function() {
             before(function() {
+                elastic.clear_already_created_indices();
                 return test_utils.write(points, {id: type})
                 .then(function(res) {
                     expect(res.errors).deep.equal([]);
@@ -40,6 +58,14 @@ describe('elastic source', function() {
                     expect(result.sinks.table).deep.equal([]);
                     expect(result.errors).deep.equal([]);
                 });
+            });
+
+            it('creates indexes with appropriate mapping', function() {
+                return test_utils.get_mapping(type)
+                    .then(function(mapping) {
+                        var settings = mapping[test_utils.test_id].mappings.event;
+                        assert_not_analyzed(settings);
+                    });
             });
 
             it('reads points from Elastic', function() {
@@ -102,7 +128,7 @@ describe('elastic source', function() {
                 });
             });
 
-            it('writes a point with a giant field', function() {
+            it('fails to write a point with a giant field', function() {
                 var GIANT_FIELD_LENGTH = 32766;
                 var giant_string = '';
                 for (var i = 0; i <= GIANT_FIELD_LENGTH; i++) {
@@ -116,7 +142,8 @@ describe('elastic source', function() {
 
                 return test_utils.write([giant_point], {id: type})
                     .then(function(result) {
-                        return test_utils.verify_import([giant_point], type);
+                        var too_big = /Document contains at least one immense term/;
+                        expect(result.errors).match(too_big);
                     });
             });
 
@@ -250,35 +277,30 @@ describe('elastic source', function() {
                 var type2 = 'type2';
                 var point1 = {name: 'type1_test', time: time1};
                 var point2 = {name: 'type2_test', time: time2};
-
-                before(function() {
-                    return test_utils.clear_data(type);
-                });
+                var types_index = test_utils.test_id + 'type';
 
                 it('writes', function() {
-                    return test_utils.write([point1], {type: type1, id: type})
+                    return test_utils.write([point1], {type: type1, id: type, index: types_index})
                         .then(function() {
-                            return test_utils.write([point2], {type: type2, id: type});
+                            return test_utils.write([point2], {type: type2, id: type, index: types_index});
                         })
                         .then(function() {
                             return test_utils.verify_import([point1, point2], type);
                         })
                         .then(function() {
-                            if (type === 'aws') { return; }
-
-                            return test_utils.list_types()
-                                .then(function(types) {
-                                    expect(types).contain(type1);
-                                    expect(types).contain(type2);
-                                });
+                            return test_utils.get_mapping(type);
+                        })
+                        .then(function(mapping) {
+                            var settings = mapping[types_index].mappings[type1];
+                            assert_not_analyzed(settings);
                         });
                 });
 
                 it('reads', function() {
-                    return test_utils.read({type: type1, id: type})
+                    return test_utils.read({type: type1, id: type, index: types_index})
                         .then(function(result) {
                             expect(result.sinks.table).deep.equal([point1]);
-                            return test_utils.read({type: type2, id: type}, '| reduce count()');
+                            return test_utils.read({type: type2, id: type, index: types_index}, '| reduce count()');
                         })
                         .then(function(result) {
                             expect(result.sinks.table).deep.equal([{count: 1}]);
@@ -286,7 +308,7 @@ describe('elastic source', function() {
                 });
 
                 it('default - reads all types', function() {
-                    return test_utils.read({id: type})
+                    return test_utils.read({id: type, index: types_index})
                         .then(function(result) {
                             expect(result.sinks.table).deep.equal([point1, point2]);
                         });
@@ -296,19 +318,19 @@ describe('elastic source', function() {
                     var point = {time: new Date().toISOString(), name: 'configured default'};
                     var id = type === 'aws' ? test_utils.aws_has_default_type_id :
                         test_utils.has_default_type;
-                    return test_utils.write([point], {id: id})
+                    return test_utils.write([point], {id: id, index: types_index})
                         .then(function() {
                             return test_utils.verify_import([point], type);
                         })
                         .then(function() {
-                            if (type === 'aws') { return; }
-                            return test_utils.list_types()
-                                .then(function(types) {
-                                    expect(types).contain('my_test_type');
-                                });
+                            return test_utils.get_mapping(type);
                         })
-                        .then(function() {
-                            return test_utils.read({id: id});
+                        .then(function(mapping) {
+                            var types = Object.keys(mapping[types_index].mappings);
+                            var expected_type = type === 'aws' ? 'aws_default_type' : 'my_test_type';
+                            expect(types).contain(expected_type);
+
+                            return test_utils.read({id: id, index: types_index});
                         })
                         .then(function(result) {
                             expect(result.sinks.table).deep.equal([point]);
@@ -368,6 +390,14 @@ describe('elastic source', function() {
             });
         });
 
+        it('juttle index has right mapping', function() {
+            return test_utils.get_mapping('local')
+                .then(function(mapping) {
+                    var settings = mapping.juttle.mappings.event;
+                    assert_not_analyzed(settings);
+                });
+        });
+
         it('read - no such index', function() {
             var program = 'read elastic -last :10 years: -index "no_such_index"';
             return check_juttle({
@@ -398,6 +428,13 @@ describe('elastic source', function() {
                         expect(result.sinks.table).deep.equal([point]);
                     });
                 }, {max_tries: 10});
+            })
+            .then(function() {
+                return test_utils.get_mapping('local');
+            })
+            .then(function(mapping) {
+                var settings = mapping[test_index].mappings.event;
+                assert_not_analyzed(settings);
             });
         });
 

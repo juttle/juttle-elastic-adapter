@@ -241,15 +241,6 @@ function check_optimization(start, end, id, extra, options) {
     });
 }
 
-function list_types() {
-    return local_client.indices.getMapping({
-        index: TEST_RUN_ID
-    })
-    .then(function(mapping) {
-        return Object.keys(mapping[TEST_RUN_ID].mappings);
-    });
-}
-
 function list_indices() {
     return local_client.indices.getAliases()
         .then(function(result) {
@@ -323,6 +314,15 @@ function generate_sample_data(info) {
     return sampleData;
 }
 
+function get_mapping(instance_type) {
+    var options = {index: '*', type: ''};
+    if (instance_type === 'aws') {
+        return aws_client.getMappingAsync(options);
+    } else {
+        return local_client.indices.getMapping(options);
+    }
+}
+
 function create_index(instance_type, index) {
     var options = {index: index};
     if (instance_type === 'aws') {
@@ -347,8 +347,8 @@ module.exports = {
     aws_has_default_type_id: aws_has_default_type_id,
     test_id: TEST_RUN_ID,
     search: search,
-    list_types: list_types,
     expect_to_fail: expect_to_fail,
     generate_sample_data: generate_sample_data,
+    get_mapping: get_mapping,
     create_index: create_index,
 };

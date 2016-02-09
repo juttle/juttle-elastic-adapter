@@ -1,0 +1,14 @@
+{
+    "dynamic_templates": [
+        {
+            "dont_analyze": {
+                "match": "*",
+                "match_mapping_type": "string",
+                "mapping": {
+                    "type": "string",
+                    "index": "not_analyzed"
+                }
+            }
+        }
+    ]
+}

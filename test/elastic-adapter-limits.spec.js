@@ -20,7 +20,7 @@ describe('elastic source limits', function() {
             before(function() {
                 return retry(function() {
                     return test_utils.write(points, {id: type})
-                    .then(function() {
+                    .then(function(result) {
                         return test_utils.verify_import(points, type);
                     });
                 }, {max_tries: 10});
