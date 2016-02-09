@@ -5,8 +5,6 @@ var test_utils = require('./elastic-test-utils');
 var points = require('./apache-sample');
 
 describe('index intervals', function() {
-    this.timeout(300000);
-
     afterEach(function() {
         return test_utils.clear_data('local', '*');
     });

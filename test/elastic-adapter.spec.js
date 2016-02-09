@@ -11,7 +11,6 @@ var points = require('./apache-sample');
 var modes = test_utils.modes;
 
 describe('elastic source', function() {
-    this.timeout(300000);
     modes.forEach(function(type) {
         describe('basic functionality -- ' + type, function() {
             before(function() {

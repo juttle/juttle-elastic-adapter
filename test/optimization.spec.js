@@ -37,8 +37,6 @@ function sortBy() {
 var modes = test_utils.modes;
 
 describe('optimization', function() {
-    this.timeout(300000);
-
     modes.forEach(function(type) {
         describe(type, function() {
             after(function() {

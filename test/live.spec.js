@@ -12,7 +12,6 @@ function generate_live_data() {
 }
 
 describe('elastic source', function() {
-    this.timeout(300000);
     modes.forEach(function(type) {
         describe('live reads -- ' + type, function() {
             afterEach(function() {
