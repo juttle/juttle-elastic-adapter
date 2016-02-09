@@ -1,3 +1,5 @@
+'use strict';
+
 var _ = require('underscore');
 var retry = require('bluebird-retry');
 var expect = require('chai').expect;
@@ -98,11 +100,56 @@ describe('elastic source', function() {
                 });
             });
 
+            it('free text search', function() {
+                function test_fts(string) {
+                    return test_utils.read({id: type}, `"${string}"`)
+                        .then(function(result) {
+                            var expected = points.filter(function matches_string(pt) {
+                                return _.any(pt, function(value, key) {
+                                    return typeof value === 'string' && value.indexOf(string) !== -1;
+                                });
+                            });
+
+                            test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                        });
+                }
+
+                return test_fts('presentations')
+                    .then(function() {
+                        return test_fts('/presentations/logstash-monitorama-2013/images/kibana-search.png');
+                    });
+            });
+
             it('reads with tag filter', function() {
                 return test_utils.read({id: type}, 'clientip = "93.114.45.13"')
                 .then(function(result) {
                     var expected = points.filter(function(pt) {
                         return pt.clientip === '93.114.45.13';
+                    });
+
+                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                });
+            });
+
+            it('reads with a tag filter including special characters', function() {
+                var request = '/presentations/logstash-monitorama-2013/images/kibana-search.png';
+                return test_utils.read({id: type}, `request = "${request}"`)
+                .then(function(result) {
+                    var expected = points.filter(function(pt) {
+                        return pt.request === request;
+                    });
+
+                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                });
+            });
+
+            it('reads with free text search', function() {
+                return test_utils.read({id: type}, '"Ubuntu"')
+                .then(function(result) {
+                    var expected = points.filter(function(pt) {
+                        return _.any(pt, function(value, key) {
+                            return typeof value === 'string' && value.match(/Ubuntu/);
+                        });
                     });
 
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
