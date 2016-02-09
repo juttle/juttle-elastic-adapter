@@ -84,19 +84,6 @@ describe('elastic source', function() {
                 });
             });
 
-            it('reads with free text search', function() {
-                return test_utils.read({id: type}, '"Ubuntu"')
-                .then(function(result) {
-                    var expected = points.filter(function(pt) {
-                        return _.any(pt, function(value, key) {
-                            return typeof value === 'string' && value.match(/Ubuntu/);
-                        });
-                    });
-
-                    test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                });
-            });
-
             it('reads with -last', function() {
                 var program = util.format('read elastic -last :10 years: -id "%s" -index "%s*"', type, test_utils.test_id);
                 return check_juttle({
@@ -105,22 +92,6 @@ describe('elastic source', function() {
                 .then(function(result) {
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
                 });
-            });
-
-            it('compiles moments in filter expressions', function() {
-                return test_utils.read({id: type}, 'client_ip != :5 minutes ago:')
-                    .then(function(result) {
-                        expect(result.errors).deep.equal([]);
-                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
-                    });
-            });
-
-            it('compiles durations in filter expressions', function() {
-                return test_utils.read({id: type}, 'client_ip != :5 minutes:')
-                    .then(function(result) {
-                        expect(result.errors).deep.equal([]);
-                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
-                    });
             });
 
             it('counts points', function() {
@@ -176,13 +147,6 @@ describe('elastic source', function() {
                     var message = util.format('invalid point: %s because of missing time', JSON.stringify(timeless));
                     expect(result.errors).deep.equal([message]);
                 });
-            });
-
-            it('rejects regex filters', function() {
-                var failing_read = test_utils.read({id: type}, 'clientip =~ /2/');
-                var message = 'read elastic filters cannot contain regular expressions';
-
-                return test_utils.expect_to_fail(failing_read, message);
             });
 
             it('warns if you filter on an analyzed field', function() {
