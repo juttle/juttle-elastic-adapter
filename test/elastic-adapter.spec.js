@@ -1,7 +1,4 @@
 var _ = require('underscore');
-var Promise = require('bluebird');
-var request = Promise.promisifyAll(require('request'));
-request.async = Promise.promisify(request);
 var retry = require('bluebird-retry');
 var expect = require('chai').expect;
 var util = require('util');

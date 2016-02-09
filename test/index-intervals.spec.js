@@ -1,6 +1,4 @@
 var Promise = require('bluebird');
-var request = Promise.promisifyAll(require('request'));
-request.async = Promise.promisify(request);
 var expect = require('chai').expect;
 
 var test_utils = require('./elastic-test-utils');
