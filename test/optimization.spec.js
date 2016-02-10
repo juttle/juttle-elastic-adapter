@@ -192,6 +192,21 @@ describe('optimization', function() {
                     });
                 });
 
+                it('optimizes count(field)', function() {
+                    return test_utils.read({id: type}, '| reduce count(clientip)')
+                    .then(function(result) {
+                        var first_node = result.prog.graph.head[0];
+                        expect(first_node.procName).equal('read');
+
+                        var second_node = first_node.out_.default[0].proc;
+                        expect(second_node.procName).equal('view');
+
+                        expect(result.sinks.table).deep.equal([{count: 30}]);
+                        var queries = result.prog.graph.adapter.executed_queries;
+                        expect(queries[0].aggregations).deep.equal({ count: { value_count: { field: 'clientip' } } });
+                    });
+                });
+
                 it('optimizes reduce by', function() {
                     return test_utils.check_optimization(start, end, type, ' | reduce by request', {
                         massage: sortBy('request')
@@ -230,8 +245,22 @@ describe('optimization', function() {
                     });
                 });
 
+                it('optimizes count(field) by', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce count(clientip) by httpversion' , {
+                        massage: sortBy('httpversion')
+                    });
+                });
+
                 it('optimizes reduce -every count()', function() {
                     return test_utils.check_optimization(start, end, type, '| reduce -every :s: count()');
+                });
+
+                it('optimizes reduce -every count(field)', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: count(clientip)');
+                });
+
+                it('optimizes reduce -every count(field) by', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: count(httpversion) by clientip');
                 });
 
                 it('optimizes reduce -every count() by', function() {
