@@ -7,7 +7,10 @@ var modes = test_utils.modes;
 
 function generate_live_data() {
     return test_utils.generate_sample_data({
-        start: Date.now() + 2000
+        start: Date.now() + 2000,
+        tags: {
+            name: ['a', 'b']
+        }
     });
 }
 
@@ -18,13 +21,14 @@ describe('elastic source', function() {
                 return test_utils.clear_data(type);
             });
 
-            function test_live(points_to_write, points_to_expect) {
+            function test_live(points_to_write, points_to_expect, extra) {
                 points_to_expect = points_to_expect || points_to_write;
+                extra = extra || '';
                 var last_time = new Date(_.last(points_to_write).time).getTime();
                 var deactivateAfter = last_time - Date.now() + 5000;
                 var options = {id: type, from: 0, to: 'end', lag: '2s'};
 
-                var read = test_utils.read(options, '', deactivateAfter)
+                var read = test_utils.read(options, extra, deactivateAfter)
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal(points_to_expect);
                 });
@@ -43,6 +47,15 @@ describe('elastic source', function() {
                 var points = generate_live_data();
 
                 return test_live(points);
+            });
+
+            it('reads live points with a filter', function() {
+                var points = generate_live_data();
+                var expected = points.filter(function(pt) {
+                    return pt.name === 'a';
+                });
+
+                return test_live(points, expected, 'name = "a"');
             });
 
             it('superquery', function() {
