@@ -169,10 +169,10 @@ describe('optimization', function() {
                 });
 
                 it('doesn\'t optimize over prior head optimization', function() {
-                    return test_utils.read({id: type}, '| head 3 | tail 0')
+                    return test_utils.read({id: type}, '| head 4 | tail 1')
                     .then(function(result) {
-                        expect(result.sinks.table).deep.equal([]);
-                        expect_graph_has_limit(result.prog.graph, 3);
+                        expect(result.sinks.table).deep.equal([points[3]]);
+                        expect_graph_has_limit(result.prog.graph, 4);
                     });
                 });
             });

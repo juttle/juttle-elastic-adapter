@@ -89,7 +89,7 @@
     "referrer": "\"http://semicomplete.com/presentations/logstash-monitorama-2013/\"",
     "agent": "\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36\"",
     "source_type": "glugs",
-    "time": "2014-09-17T14:13:43.000Z"
+    "time": "2014-09-17T14:13:43.001Z"
   },
   {
     "message": "83.149.9.216 - - [17/Sep/2014:07:13:44 +0000] \"GET /presentations/logstash-monitorama-2013/plugin/highlight/highlight.js HTTP/1.1\" 200 26185 \"http://semicomplete.com/presentations/logstash-monitorama-2013/\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.77 Safari/537.36\"",
