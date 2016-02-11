@@ -11,8 +11,6 @@ var points = require('./apache-sample');
 var modes = test_utils.modes;
 
 describe('elastic source limits', function() {
-    this.timeout(30000);
-
     modes.forEach(function(type) {
         describe(type, function() {
             after(function() {
@@ -22,7 +20,7 @@ describe('elastic source limits', function() {
             before(function() {
                 return retry(function() {
                     return test_utils.write(points, {id: type})
-                    .then(function() {
+                    .then(function(result) {
                         return test_utils.verify_import(points, type);
                     });
                 }, {max_tries: 10});

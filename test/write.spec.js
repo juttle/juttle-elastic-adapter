@@ -7,7 +7,6 @@ var test_utils = require('./elastic-test-utils');
 var modes = test_utils.modes;
 
 describe('write', function() {
-    this.timeout(300000);
     modes.forEach(function(type) {
         describe(type, function() {
             afterEach(function() {

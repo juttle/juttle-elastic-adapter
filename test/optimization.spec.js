@@ -5,6 +5,7 @@ var expect = require('chai').expect;
 var util = require('util');
 
 var test_utils = require('./elastic-test-utils');
+var elastic = require('../lib/elastic');
 var points = require('./apache-sample');
 
 function format_juttle_result_like_es(pts) {
@@ -37,8 +38,6 @@ function sortBy() {
 var modes = test_utils.modes;
 
 describe('optimization', function() {
-    this.timeout(300000);
-
     modes.forEach(function(type) {
         describe(type, function() {
             after(function() {
@@ -46,6 +45,7 @@ describe('optimization', function() {
             });
 
             before(function() {
+                elastic.clear_already_created_indices();
                 return test_utils.write(points, {id: type})
                 .then(function() {
                     return test_utils.verify_import(points, type);
@@ -180,6 +180,12 @@ describe('optimization', function() {
 
                         expect(result.sinks.table).deep.equal([{count: 30}]);
                         expect(result.prog.graph.adapter.es_opts.aggregations.count).equal('count');
+                    });
+                });
+
+                it('optimizes reduce by', function() {
+                    return test_utils.check_optimization(start, end, type, ' | reduce by request', {
+                        massage: sortBy('request')
                     });
                 });
 
