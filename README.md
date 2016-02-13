@@ -162,6 +162,9 @@ In this case, Juttle will issue a query against ES that matches documents whose 
 * `reduce by fieldname` (other than reduce by document type)
 * `reduce -every :interval:`
 
+##### Optimization and nested objects
+There are a few fundamental incompatibilities between [Elasticsearch's model](https://www.elastic.co/guide/en/elasticsearch/guide/current/complex-core-fields.html) for nested object and array fields and [Juttle's](http://juttle.github.io/juttle/concepts/fields/#fields-with-object-or-array-values). This can lead to some odd results for optimized programs. For objects, an optimized `reduce by some_object_field` will return `null` as the only value for `some_object_field`. For arrays, an optimized `reduce by some_array_field` will return a separate value for `some_array_field` for every element in every array stored in `some_array_field`. For results conforming to Juttle's `reduce` behavior, disable optimization with `read elastic -optimize false`.
+
 In case of unexpected behavior with optimized reads, add `-optimize false` option to `read elastic` to disable optimizations, and kindly report the problem as a GitHub issue.
 
 ## Contributing
