@@ -2,6 +2,7 @@ var _ = require('underscore');
 var retry = require('bluebird-retry');
 var expect = require('chai').expect;
 
+var elastic = require('../lib/elastic');
 var test_utils = require('./elastic-test-utils');
 var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
 var check_juttle = juttle_test_utils.check_juttle;
@@ -12,6 +13,7 @@ describe('write', function() {
     modes.forEach(function(type) {
         describe(type, function() {
             afterEach(function() {
+                elastic.clear_already_created_indices();
                 return test_utils.clear_data(type);
             });
 
@@ -76,7 +78,7 @@ describe('write', function() {
                 });
             });
 
-            it('writes a point with a duration', function() { // pending https://github.com/juttle/juttle-elastic-adapter/pull/91
+            it('writes a point with a duration', function() {
                 var time = '5 minutes';
                 var write_program = `emit -limit 1 | put duration = :${time}:` +
                     ` | write elastic -id "${type}" -index "${test_utils.test_id}"`;
