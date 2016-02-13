@@ -2,6 +2,8 @@ var Promise = require('bluebird');
 var expect = require('chai').expect;
 
 var test_utils = require('./elastic-test-utils');
+var expect_to_fail = test_utils.expect_to_fail;
+var check_no_write = test_utils.check_no_write;
 var points = require('./apache-sample');
 
 describe('index intervals', function() {
@@ -51,19 +53,22 @@ describe('index intervals', function() {
     });
 
     describe('errors', function() {
+        function check_write_fail(promise, message) {
+            return check_no_write(expect_to_fail(promise, message));
+        }
         it('bogus interval', function() {
             var message = 'invalid interval: bananas; accepted intervals are "day", "week", "month" "year", and "none"';
             var bad_opts = {indexInterval: 'bananas'};
             return Promise.all([
-                test_utils.expect_to_fail(test_utils.read(bad_opts), message),
-                test_utils.expect_to_fail(test_utils.write(points, bad_opts), message)
+                expect_to_fail(test_utils.read(bad_opts), message),
+                check_write_fail(test_utils.write(points, bad_opts), message)
             ]);
         });
 
         it('star in middle of write index', function() {
             var index = 's*tar';
             var message = 'cannot write to index pattern: ' + index;
-            return test_utils.expect_to_fail(test_utils.write([{}], {index: index}), message);
+            return check_write_fail(test_utils.write([{}], {index: index}), message);
         });
 
         it('indexInterval and no star', function() {
@@ -71,15 +76,25 @@ describe('index intervals', function() {
             var index = 'no_star';
             var bad_opts = {index: index, indexInterval: 'day'};
             return Promise.all([
-                test_utils.expect_to_fail(test_utils.read(bad_opts), message),
-                test_utils.expect_to_fail(test_utils.write([{}], bad_opts), message)
+                expect_to_fail(test_utils.read(bad_opts), message),
+                check_write_fail(test_utils.write([{}], bad_opts), message)
             ]);
         });
 
         it('star in write index for none', function() {
             var message = 'index for write with interval "none" cannot contain *';
             var index = 'star*';
-            return test_utils.expect_to_fail(test_utils.write([{}], {index: index}), message);
+            return check_write_fail(test_utils.write([{}], {index: index}), message);
+        });
+
+        it('invalid index name', function() {
+            var time = new Date().toISOString();
+            var write = test_utils.write([{time: time}], {index: 'spaces are bad'})
+                .then(function(result) {
+                    expect(result.errors).match(/Invalid index name/);
+                });
+
+            return check_no_write(write);
         });
     });
 });
