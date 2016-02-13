@@ -57,6 +57,15 @@ describe('optimization', function() {
                 expect(graph.adapter.executed_queries[0].size).equal(limit);
             }
 
+            it('does not optmize with optimize: false', function() {
+                return test_utils.read({id: type}, '-optimize false | reduce sum(bytes)')
+                    .then(function(result) {
+                        var query = result.prog.graph.adapter.executed_queries[0];
+                        expect(query.size).equal(10000);
+                        expect(query.aggregations).equal(undefined);
+                    });
+            });
+
             describe('head', function() {
                 it('optimizes head', function() {
                     return test_utils.read({id: type}, '| head 3')
