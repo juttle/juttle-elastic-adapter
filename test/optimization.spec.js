@@ -169,10 +169,10 @@ describe('optimization', function() {
                 });
 
                 it('doesn\'t optimize over prior head optimization', function() {
-                    return test_utils.read({id: type}, '| head 3 | tail 0')
+                    return test_utils.read({id: type}, '| head 4 | tail 1')
                     .then(function(result) {
-                        expect(result.sinks.table).deep.equal([]);
-                        expect_graph_has_limit(result.prog.graph, 3);
+                        expect(result.sinks.table).deep.equal([points[3]]);
+                        expect_graph_has_limit(result.prog.graph, 4);
                     });
                 });
             });
@@ -189,6 +189,21 @@ describe('optimization', function() {
 
                         expect(result.sinks.table).deep.equal([{count: 30}]);
                         expect(result.prog.graph.adapter.es_opts.aggregations.count).equal('count');
+                    });
+                });
+
+                it('optimizes count(field)', function() {
+                    return test_utils.read({id: type}, '| reduce count(clientip)')
+                    .then(function(result) {
+                        var first_node = result.prog.graph.head[0];
+                        expect(first_node.procName).equal('read');
+
+                        var second_node = first_node.out_.default[0].proc;
+                        expect(second_node.procName).equal('view');
+
+                        expect(result.sinks.table).deep.equal([{count: 30}]);
+                        var queries = result.prog.graph.adapter.executed_queries;
+                        expect(queries[0].aggregations).deep.equal({ count: { value_count: { field: 'clientip' } } });
                     });
                 });
 
@@ -230,8 +245,22 @@ describe('optimization', function() {
                     });
                 });
 
+                it('optimizes count(field) by', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce count(clientip) by httpversion' , {
+                        massage: sortBy('httpversion')
+                    });
+                });
+
                 it('optimizes reduce -every count()', function() {
                     return test_utils.check_optimization(start, end, type, '| reduce -every :s: count()');
+                });
+
+                it('optimizes reduce -every count(field)', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: count(clientip)');
+                });
+
+                it('optimizes reduce -every count(field) by', function() {
+                    return test_utils.check_optimization(start, end, type, '| reduce -every :s: count(httpversion) by clientip');
                 });
 
                 it('optimizes reduce -every count() by', function() {
