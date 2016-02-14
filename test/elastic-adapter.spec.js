@@ -213,9 +213,11 @@ describe('elastic source', function() {
                 var program_base = 'emit -points %s | remove time | write elastic -id "%s" -index "timeless"';
                 var write_program = util.format(program_base, JSON.stringify([timeless]), type);
 
-                return check_juttle({
+                var write_promise = check_juttle({
                     program: write_program
-                })
+                });
+
+                return test_utils.check_no_write(write_promise, {id: type, index: 'timeless'})
                 .then(function(result) {
                     var message = util.format('invalid point: %s because of missing time', JSON.stringify(timeless));
                     expect(result.errors).deep.equal([message]);

@@ -314,6 +314,27 @@ function generate_sample_data(info) {
     return sampleData;
 }
 
+function check_no_write(write_promise, read_options) {
+    function count() {
+        return read(read_options, '| reduce count()');
+    }
+
+    var total, res;
+    return count()
+        .then(function(result) {
+            total = result.sinks.table[0].count;
+            return write_promise;
+        })
+        .then(function(result) {
+            res = result;
+            return count();
+        })
+        .then(function(result) {
+            expect(result.sinks.table[0].count).equal(total);
+            return res;
+        });
+}
+
 function get_mapping(instance_type) {
     var options = {index: '*', type: ''};
     if (instance_type === 'aws') {
@@ -349,6 +370,7 @@ module.exports = {
     search: search,
     expect_to_fail: expect_to_fail,
     generate_sample_data: generate_sample_data,
+    check_no_write: check_no_write,
     get_mapping: get_mapping,
     create_index: create_index,
 };
