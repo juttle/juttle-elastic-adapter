@@ -31,6 +31,7 @@ describe('elastic source', function() {
                 var read = test_utils.read(options, extra, deactivateAfter)
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal(points_to_expect);
+                    return result;
                 });
 
                 return test_utils.write(points_to_write, {id: type})
@@ -71,6 +72,16 @@ describe('elastic source', function() {
                     .then(function() {
                         var live = generate_live_data();
                         return test_live(live, historical.concat(live));
+                    });
+            });
+
+            // depends on https://github.com/juttle/juttle/pull/400
+            it.skip('-every', function() {
+                var points = generate_live_data();
+                return test_live(points, points, '-every :0.5s:')
+                    .then(function(result) {
+                        var num_queries = result.prog.graph.adapter.executed_queries.length;
+                        expect(num_queries).at.least(10);
                     });
             });
         });
