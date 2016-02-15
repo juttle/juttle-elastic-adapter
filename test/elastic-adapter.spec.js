@@ -13,6 +13,7 @@ var DYNAMIC_MAPPING_SETTINGS = require('../lib/dynamic-mapping-settings');
 var elastic = require('../lib/elastic');
 
 var modes = test_utils.modes;
+var ES_MAX_FIELD_LENGTH = 32766;
 
 function assert_not_analyzed(settings) {
     expect(settings.dynamic_templates)
@@ -175,10 +176,33 @@ describe('elastic source', function() {
                 });
             });
 
+            it('writes a point with a big field not too big', function() {
+                var pretty_big_string = '';
+                for (var i = 0; i < ES_MAX_FIELD_LENGTH; i++) {
+                    pretty_big_string += '@';
+                }
+
+                var pretty_big_point = {
+                    time: new Date().toISOString(),
+                    pretty_big_field: pretty_big_string
+                };
+
+                return test_utils.write([pretty_big_point], {id: type})
+                    .then(function(result) {
+                        expect(result.errors).deep.equal([]);
+                        return test_utils.verify_import([pretty_big_point], type);
+                    })
+                    .then(function() {
+                        return test_utils.read({id: type}, `pretty_big_field = "${pretty_big_string}"`);
+                    })
+                    .then(function(result) {
+                        expect(result.sinks.table).deep.equal([pretty_big_point]);
+                    });
+            });
+
             it('fails to write a point with a giant field', function() {
-                var GIANT_FIELD_LENGTH = 32766;
                 var giant_string = '';
-                for (var i = 0; i <= GIANT_FIELD_LENGTH; i++) {
+                for (var i = 0; i <= ES_MAX_FIELD_LENGTH; i++) {
                     giant_string += '@';
                 }
 
@@ -372,6 +396,16 @@ describe('elastic source', function() {
                             expect(result.sinks.table).deep.equal([point]);
                         });
                 });
+
+                it('read - no such type warns', function() {
+                    return test_utils.read({id: type, type: 'bananas'})
+                        .then(function(result) {
+                            expect(result.sinks.table).deep.equal([]);
+                            expect(result.errors).deep.equal([]);
+                            var warning = `index/type combination "${test_utils.test_id}"/"bananas" not found`;
+                            expect(result.warnings).deep.equal([warning]);
+                        });
+                });
             });
         });
     });
@@ -442,6 +476,8 @@ describe('elastic source', function() {
             .then(function(result) {
                 expect(result.sinks.table).deep.equal([]);
                 expect(result.errors).deep.equal([]);
+                var warning = 'index/type combination "no_such_index"/"" not found';
+                expect(result.warnings).deep.equal([warning]);
             });
         });
 
@@ -549,6 +585,11 @@ describe('elastic source', function() {
 
                     expect(result.sinks.table).deep.equal([expected]);
                 });
+        });
+
+        it('rejects filter on idField', function() {
+            var failing_read = test_utils.read({idField: id_field}, `${id_field} = 10`);
+            return test_utils.expect_to_fail(failing_read, 'cannot filter on idField');
         });
     });
 });
