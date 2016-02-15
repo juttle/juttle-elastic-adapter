@@ -372,6 +372,16 @@ describe('elastic source', function() {
                             expect(result.sinks.table).deep.equal([point]);
                         });
                 });
+
+                it('read - no such type warns', function() {
+                    return test_utils.read({id: type, type: 'bananas'})
+                        .then(function(result) {
+                            expect(result.sinks.table).deep.equal([]);
+                            expect(result.errors).deep.equal([]);
+                            var warning = `index/type combination "${test_utils.test_id}"/"bananas" not found`;
+                            expect(result.warnings).deep.equal([warning]);
+                        });
+                });
             });
         });
     });
@@ -442,6 +452,8 @@ describe('elastic source', function() {
             .then(function(result) {
                 expect(result.sinks.table).deep.equal([]);
                 expect(result.errors).deep.equal([]);
+                var warning = 'index/type combination "no_such_index"/"" not found';
+                expect(result.warnings).deep.equal([warning]);
             });
         });
 
