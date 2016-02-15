@@ -101,6 +101,29 @@ juttle_test_utils.withAdapterAPI(function() {
                 });
             });
 
+            // depends on https://github.com/juttle/juttle/issues/483
+            it.skip('reads with an equality time filter on the actual time field', function() {
+                return test_utils.read({id: mode}, `*"@timestamp" = :${points[0].time}:`)
+                    .then(function(result) {
+                        var expected = points.filter(function(pt) {
+                            return pt.time === points[0].time;
+                        });
+
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                    });
+            });
+
+            it('reads with an equality time filter on the "time" field', function() {
+                return test_utils.read({id: mode}, `time = :${points[0].time}:`)
+                    .then(function(result) {
+                        var expected = points.filter(function(pt) {
+                            return pt.time === points[0].time;
+                        });
+
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                    });
+            });
+
             it('free text search', function() {
                 function test_fts(string) {
                     return test_utils.read({id: mode}, `"${string}"`)
