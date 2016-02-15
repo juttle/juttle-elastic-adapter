@@ -550,5 +550,10 @@ describe('elastic source', function() {
                     expect(result.sinks.table).deep.equal([expected]);
                 });
         });
+
+        it('rejects filter on idField', function() {
+            var failing_read = test_utils.read({idField: id_field}, `${id_field} = 10`);
+            return test_utils.expect_to_fail(failing_read, 'cannot filter on idField');
+        });
     });
 });
