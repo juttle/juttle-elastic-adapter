@@ -6,11 +6,10 @@ var expect = require('chai').expect;
 var util = require('util');
 
 var test_utils = require('./elastic-test-utils');
-var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
+var juttle_test_utils = require('juttle/test').utils;
 var check_juttle = juttle_test_utils.check_juttle;
 var points = require('./apache-sample');
 var DYNAMIC_MAPPING_SETTINGS = require('../lib/dynamic-mapping-settings');
-var elastic = require('../lib/elastic');
 
 var modes = test_utils.modes;
 var ES_MAX_FIELD_LENGTH = 32766;
@@ -30,7 +29,8 @@ function assert_not_analyzed(settings) {
     expect(had_not_analyzed).equal(true);
 }
 
-describe('elastic source', function() {
+juttle_test_utils.withAdapterAPI(function() {
+    var elastic = require('../lib/elastic');
     modes.forEach(function(mode) {
         describe('basic functionality -- ' + mode, function() {
             before(function() {
