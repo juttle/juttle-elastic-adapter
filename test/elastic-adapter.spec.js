@@ -31,31 +31,31 @@ function assert_not_analyzed(settings) {
 }
 
 describe('elastic source', function() {
-    modes.forEach(function(type) {
-        describe('basic functionality -- ' + type, function() {
+    modes.forEach(function(mode) {
+        describe('basic functionality -- ' + mode, function() {
             before(function() {
                 elastic.clear_already_created_indices();
-                return test_utils.write(points, {id: type})
+                return test_utils.write(points, {id: mode})
                 .then(function(res) {
                     expect(res.errors).deep.equal([]);
-                    return test_utils.verify_import(points, type);
+                    return test_utils.verify_import(points, mode);
                 });
             });
 
             after(function() {
-                return test_utils.clear_data(type);
+                return test_utils.clear_data(mode);
             });
 
             it('gracefully handles a lack of data', function() {
-                return test_utils.read({from: '1 minute ago', to: 'now', id: type})
+                return test_utils.read({from: '1 minute ago', to: 'now', id: mode})
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([]);
                     expect(result.errors).deep.equal([]);
-                    return test_utils.read({from: '1 minute ago', to: 'now', id: type}, '| reduce count()');
+                    return test_utils.read({from: '1 minute ago', to: 'now', id: mode}, '| reduce count()');
                 })
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([{count: 0}]);
-                    return test_utils.read({index: 'no_such_index', id: type});
+                    return test_utils.read({index: 'no_such_index', id: mode});
                 })
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([]);
@@ -64,7 +64,7 @@ describe('elastic source', function() {
             });
 
             it('creates indexes with appropriate mapping', function() {
-                return test_utils.get_mapping(type)
+                return test_utils.get_mapping(mode)
                     .then(function(mapping) {
                         var settings = mapping[test_utils.test_id].mappings.event;
                         assert_not_analyzed(settings);
@@ -72,14 +72,14 @@ describe('elastic source', function() {
             });
 
             it('reads points from Elastic', function() {
-                return test_utils.read({id: type})
+                return test_utils.read({id: mode})
                 .then(function(result) {
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
                 });
             });
 
             it('default from/to: error', function() {
-                var program = util.format('read elastic -id "%s"', type);
+                var program = util.format('read elastic -id "%s"', mode);
                 var failing_read = check_juttle({
                     program: program
                 });
@@ -91,7 +91,7 @@ describe('elastic source', function() {
             it('reads with a nontrivial time filter', function() {
                 var start = '2014-09-17T14:13:42.000Z';
                 var end = '2014-09-17T14:13:43.000Z';
-                return test_utils.read({from: start, to: end, id: type})
+                return test_utils.read({from: start, to: end, id: mode})
                 .then(function(result) {
                     var expected = points.filter(function(pt) {
                         return pt.time >= start && pt.time < end;
@@ -103,7 +103,7 @@ describe('elastic source', function() {
 
             it('free text search', function() {
                 function test_fts(string) {
-                    return test_utils.read({id: type}, `"${string}"`)
+                    return test_utils.read({id: mode}, `"${string}"`)
                         .then(function(result) {
                             var expected = points.filter(function matches_string(pt) {
                                 return _.any(pt, function(value, key) {
@@ -122,7 +122,7 @@ describe('elastic source', function() {
             });
 
             it('reads with tag filter', function() {
-                return test_utils.read({id: type}, 'clientip = "93.114.45.13"')
+                return test_utils.read({id: mode}, 'clientip = "93.114.45.13"')
                 .then(function(result) {
                     var expected = points.filter(function(pt) {
                         return pt.clientip === '93.114.45.13';
@@ -134,7 +134,7 @@ describe('elastic source', function() {
 
             it('reads with a tag filter including special characters', function() {
                 var request = '/presentations/logstash-monitorama-2013/images/kibana-search.png';
-                return test_utils.read({id: type}, `request = "${request}"`)
+                return test_utils.read({id: mode}, `request = "${request}"`)
                 .then(function(result) {
                     var expected = points.filter(function(pt) {
                         return pt.request === request;
@@ -145,7 +145,7 @@ describe('elastic source', function() {
             });
 
             it('reads with free text search', function() {
-                return test_utils.read({id: type}, '"Ubuntu"')
+                return test_utils.read({id: mode}, '"Ubuntu"')
                 .then(function(result) {
                     var expected = points.filter(function(pt) {
                         return _.any(pt, function(value, key) {
@@ -158,7 +158,7 @@ describe('elastic source', function() {
             });
 
             it('reads with -last', function() {
-                var program = util.format('read elastic -last :10 years: -id "%s" -index "%s*"', type, test_utils.test_id);
+                var program = util.format('read elastic -last :10 years: -id "%s" -index "%s*"', mode, test_utils.test_id);
                 return check_juttle({
                     program: program
                 })
@@ -170,7 +170,7 @@ describe('elastic source', function() {
             it('counts points', function() {
                 var start = '2014-09-17T14:13:42.000Z';
                 var end = '2014-09-17T14:13:43.000Z';
-                return test_utils.read({from: start, to: end, id: type}, ' | reduce count()')
+                return test_utils.read({from: start, to: end, id: mode}, ' | reduce count()')
                 .then(function(result) {
                     expect(result.sinks.table).deep.equal([{count: 3}]);
                 });
@@ -187,13 +187,13 @@ describe('elastic source', function() {
                     pretty_big_field: pretty_big_string
                 };
 
-                return test_utils.write([pretty_big_point], {id: type})
+                return test_utils.write([pretty_big_point], {id: mode})
                     .then(function(result) {
                         expect(result.errors).deep.equal([]);
-                        return test_utils.verify_import([pretty_big_point], type);
+                        return test_utils.verify_import([pretty_big_point], mode);
                     })
                     .then(function() {
-                        return test_utils.read({id: type}, `pretty_big_field = "${pretty_big_string}"`);
+                        return test_utils.read({id: mode}, `pretty_big_field = "${pretty_big_string}"`);
                     })
                     .then(function(result) {
                         expect(result.sinks.table).deep.equal([pretty_big_point]);
@@ -211,7 +211,7 @@ describe('elastic source', function() {
                     giant_field: giant_string
                 };
 
-                return test_utils.write([giant_point], {id: type})
+                return test_utils.write([giant_point], {id: mode})
                     .then(function(result) {
                         var too_big = /Document contains at least one immense term/;
                         expect(result.errors).match(too_big);
@@ -222,13 +222,13 @@ describe('elastic source', function() {
                 var timeless = {value: 1, name: 'dave'};
 
                 var program_base = 'emit -points %s | remove time | write elastic -id "%s" -index "timeless"';
-                var write_program = util.format(program_base, JSON.stringify([timeless]), type);
+                var write_program = util.format(program_base, JSON.stringify([timeless]), mode);
 
                 var write_promise = check_juttle({
                     program: write_program
                 });
 
-                return test_utils.check_no_write(write_promise, {id: type, index: 'timeless'})
+                return test_utils.check_no_write(write_promise, {id: mode, index: 'timeless'})
                 .then(function(result) {
                     var message = util.format('invalid point: %s because of missing time', JSON.stringify(timeless));
                     expect(result.errors).deep.equal([message]);
@@ -236,7 +236,7 @@ describe('elastic source', function() {
             });
 
             it('rejects regex filters', function() {
-                var failing_read = test_utils.read({id: type}, 'clientip =~ /2/');
+                var failing_read = test_utils.read({id: mode}, 'clientip =~ /2/');
                 var message = 'read elastic filters cannot contain regular expressions';
 
                 return test_utils.expect_to_fail(failing_read, message);
@@ -244,7 +244,7 @@ describe('elastic source', function() {
 
             it('warns if you filter on an unknown field', function() {
                 return retry(function() {
-                    return test_utils.read({id: type}, 'bananas = "pajamas"')
+                    return test_utils.read({id: mode}, 'bananas = "pajamas"')
                         .then(function(result) {
                             var warning = `index "${test_utils.test_id}" has no ` +
                                 `known property "bananas" for type "event"`;
@@ -257,7 +257,7 @@ describe('elastic source', function() {
 
             it('warns if you reduce by an unknown field', function() {
                 return retry(function() {
-                    return test_utils.read({id: type}, '| reduce by bananas')
+                    return test_utils.read({id: mode}, '| reduce by bananas')
                         .then(function(result) {
                             var warning = `index "${test_utils.test_id}" has no ` +
                                 `known property "bananas" for type "event"`;
@@ -272,12 +272,12 @@ describe('elastic source', function() {
                 var time = new Date().toISOString();
                 var my_timed_point = [{time: time, name: 'my_time_test'}];
                 it('reads and writes', function() {
-                    return test_utils.write(my_timed_point, {timeField: 'my_time', id: type})
+                    return test_utils.write(my_timed_point, {timeField: 'my_time', id: mode})
                         .then(function() {
-                            return test_utils.verify_import(my_timed_point, type, '*', {timeField: 'my_time'});
+                            return test_utils.verify_import(my_timed_point, mode, '*', {timeField: 'my_time'});
                         })
                         .then(function() {
-                            return test_utils.search(type, test_utils.test_id);
+                            return test_utils.search(mode, test_utils.test_id);
                         })
                         .then(function(es_result) {
                             var sources = _.pluck(es_result.hits.hits, '_source');
@@ -285,12 +285,12 @@ describe('elastic source', function() {
                             expect(my_point.my_time).equal(time);
 
                             var extra = 'name="my_time_test"';
-                            return test_utils.read({timeField: 'my_time', id: type}, extra);
+                            return test_utils.read({timeField: 'my_time', id: mode}, extra);
                         })
                         .then(function(result) {
                             expect(result.sinks.table).deep.equal(my_timed_point);
                             var extra = 'name="my_time_test" | reduce count()';
-                            return test_utils.read({timeField: 'my_time', id: type}, extra);
+                            return test_utils.read({timeField: 'my_time', id: mode}, extra);
                         })
                         .then(function(result) {
                             expect(result.sinks.table).deep.equal([{count: 1}]);
@@ -301,7 +301,7 @@ describe('elastic source', function() {
                     var end_ts = new Date(time).getTime() + 1;
                     var end = new Date(end_ts).toISOString();
                     var extra = 'name="my_time_test" | reduce -every :ms: count()';
-                    var options = {from: time, to: end, id: type, timeField: 'my_time'};
+                    var options = {from: time, to: end, id: mode, timeField: 'my_time'};
                     return test_utils.read(options, extra)
                         .then(function(result) {
                             expect(result.sinks.table).deep.equal([{time: end, count: 1}]);
@@ -309,18 +309,18 @@ describe('elastic source', function() {
                 });
 
                 it('warns if you clobber a timeField field', function() {
-                    return test_utils.write(my_timed_point, {timeField: 'name', id: type})
+                    return test_utils.write(my_timed_point, {timeField: 'name', id: mode})
                         .then(function(result) {
                             var message = util.format('clobbering name value of {"name":"my_time_test"} with %s', time);
                             expect(result.warnings).deep.equal([message]);
                             var expected_point = {name: time};
-                            return test_utils.verify_import([expected_point], type, '*', {timeField: 'my_time'});
+                            return test_utils.verify_import([expected_point], mode, '*', {timeField: 'my_time'});
                         });
                 });
 
                 it('warns if you read a nonexistent timefield', function() {
                     return retry(function() {
-                        return test_utils.read({id: type, timeField: 'bananas'})
+                        return test_utils.read({id: mode, timeField: 'bananas'})
                             .then(function(result) {
                                 var warning = `index "${test_utils.test_id}" has no ` +
                                     `known property "bananas" for type "event"`;
@@ -340,15 +340,15 @@ describe('elastic source', function() {
                 var types_index = test_utils.test_id + 'type';
 
                 it('writes', function() {
-                    return test_utils.write([point1], {type: type1, id: type, index: types_index})
+                    return test_utils.write([point1], {type: type1, id: mode, index: types_index})
                         .then(function() {
-                            return test_utils.write([point2], {type: type2, id: type, index: types_index});
+                            return test_utils.write([point2], {type: type2, id: mode, index: types_index});
                         })
                         .then(function() {
-                            return test_utils.verify_import([point1, point2], type);
+                            return test_utils.verify_import([point1, point2], mode);
                         })
                         .then(function() {
-                            return test_utils.get_mapping(type);
+                            return test_utils.get_mapping(mode);
                         })
                         .then(function(mapping) {
                             var settings = mapping[types_index].mappings[type1];
@@ -357,10 +357,10 @@ describe('elastic source', function() {
                 });
 
                 it('reads', function() {
-                    return test_utils.read({type: type1, id: type, index: types_index})
+                    return test_utils.read({type: type1, id: mode, index: types_index})
                         .then(function(result) {
                             expect(result.sinks.table).deep.equal([point1]);
-                            return test_utils.read({type: type2, id: type, index: types_index}, '| reduce count()');
+                            return test_utils.read({type: type2, id: mode, index: types_index}, '| reduce count()');
                         })
                         .then(function(result) {
                             expect(result.sinks.table).deep.equal([{count: 1}]);
@@ -368,7 +368,7 @@ describe('elastic source', function() {
                 });
 
                 it('default - reads all types', function() {
-                    return test_utils.read({id: type, index: types_index})
+                    return test_utils.read({id: mode, index: types_index})
                         .then(function(result) {
                             expect(result.sinks.table).deep.equal([point1, point2]);
                         });
@@ -376,18 +376,18 @@ describe('elastic source', function() {
 
                 it('reads and writes with a configured default type', function() {
                     var point = {time: new Date().toISOString(), name: 'configured default'};
-                    var id = type === 'aws' ? test_utils.aws_has_default_type_id :
+                    var id = mode === 'aws' ? test_utils.aws_has_default_type_id :
                         test_utils.has_default_type;
                     return test_utils.write([point], {id: id, index: types_index})
                         .then(function() {
-                            return test_utils.verify_import([point], type);
+                            return test_utils.verify_import([point], mode);
                         })
                         .then(function() {
-                            return test_utils.get_mapping(type);
+                            return test_utils.get_mapping(mode);
                         })
                         .then(function(mapping) {
                             var types = Object.keys(mapping[types_index].mappings);
-                            var expected_type = type === 'aws' ? 'aws_default_type' : 'my_test_type';
+                            var expected_type = mode === 'aws' ? 'aws_default_type' : 'my_test_type';
                             expect(types).contain(expected_type);
 
                             return test_utils.read({id: id, index: types_index});
@@ -398,7 +398,7 @@ describe('elastic source', function() {
                 });
 
                 it('read - no such type warns', function() {
-                    return test_utils.read({id: type, type: 'bananas'})
+                    return test_utils.read({id: mode, type: 'bananas'})
                         .then(function(result) {
                             expect(result.sinks.table).deep.equal([]);
                             expect(result.errors).deep.equal([]);
