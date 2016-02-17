@@ -15,10 +15,10 @@ function generate_live_data() {
 }
 
 describe('elastic source', function() {
-    modes.forEach(function(type) {
-        describe('live reads -- ' + type, function() {
+    modes.forEach(function(mode) {
+        describe('live reads -- ' + mode, function() {
             afterEach(function() {
-                return test_utils.clear_data(type);
+                return test_utils.clear_data(mode);
             });
 
             function test_live(points_to_write, points_to_expect, extra) {
@@ -26,7 +26,7 @@ describe('elastic source', function() {
                 extra = extra || '';
                 var last_time = new Date(_.last(points_to_write).time).getTime();
                 var deactivateAfter = last_time - Date.now() + 5000;
-                var options = {id: type, from: 0, to: 'end', lag: '2s'};
+                var options = {id: mode, from: 0, to: 'end', lag: '2s'};
 
                 var read = test_utils.read(options, extra, deactivateAfter)
                 .then(function(result) {
@@ -34,10 +34,10 @@ describe('elastic source', function() {
                     return result;
                 });
 
-                return test_utils.write(points_to_write, {id: type})
+                return test_utils.write(points_to_write, {id: mode})
                 .then(function(result) {
                     expect(result.errors).deep.equal([]);
-                    return test_utils.verify_import(points_to_write, type);
+                    return test_utils.verify_import(points_to_write, mode);
                 })
                 .then(function() {
                     return read;
@@ -64,10 +64,10 @@ describe('elastic source', function() {
                     tags: {name: ['historical']}
                 });
 
-                return test_utils.write(historical, {id: type})
+                return test_utils.write(historical, {id: mode})
                     .then(function(result) {
                         expect(result.errors).deep.equal([]);
-                        return test_utils.verify_import(historical, type);
+                        return test_utils.verify_import(historical, mode);
                     })
                     .then(function() {
                         var live = generate_live_data();

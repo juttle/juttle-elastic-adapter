@@ -11,17 +11,17 @@ var points = require('./apache-sample');
 var modes = test_utils.modes;
 
 describe('elastic source limits', function() {
-    modes.forEach(function(type) {
-        describe(type, function() {
+    modes.forEach(function(mode) {
+        describe(mode, function() {
             after(function() {
-                return test_utils.clear_data(type);
+                return test_utils.clear_data(mode);
             });
 
             before(function() {
                 return retry(function() {
-                    return test_utils.write(points, {id: type})
+                    return test_utils.write(points, {id: mode})
                     .then(function(result) {
-                        return test_utils.verify_import(points, type);
+                        return test_utils.verify_import(points, mode);
                     });
                 }, {max_tries: 10});
             });
@@ -29,7 +29,7 @@ describe('elastic source limits', function() {
             it('executes multiple fetches', function() {
                 var start = '2014-09-17T14:13:47.000Z';
                 var end = '2014-09-17T14:14:32.000Z';
-                return test_utils.read({from: start, to: end, id: type})
+                return test_utils.read({from: start, to: end, id: mode})
                 .then(function(result) {
                     var expected = points.filter(function(pt) {
                         return pt.time >= start && pt.time < end;
@@ -41,7 +41,7 @@ describe('elastic source limits', function() {
 
             it('errors if you try to read too many simultaneous points', function() {
                 var extra = '-fetch_size 2 -deep_paging_limit 3';
-                return test_utils.read({id: type}, extra)
+                return test_utils.read({id: mode}, extra)
                 .then(function(result) {
                     expect(result.errors).deep.equal([ 'Cannot fetch more than 3 points with the same timestamp' ]);
                 });
@@ -49,7 +49,7 @@ describe('elastic source limits', function() {
 
             it('enforces head across multiple fetches', function() {
                 var extra = '-fetch_size 2 | head 3';
-                return test_utils.read({id: type}, extra)
+                return test_utils.read({id: mode}, extra)
                 .then(function(result) {
                     var expected = points.slice(0, 3);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
@@ -59,7 +59,7 @@ describe('elastic source limits', function() {
 
             it('doesn\'t optimize tail in excess of fetch size', function() {
                 var extra = '-fetch_size 2 | tail 8';
-                return test_utils.read({id: type}, extra)
+                return test_utils.read({id: mode}, extra)
                 .then(function(result) {
                     var expected = _.last(points, 8);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
@@ -68,7 +68,7 @@ describe('elastic source limits', function() {
             });
 
             it('catches window errors and reports something usable', function() {
-                if (type === 'aws') {
+                if (mode === 'aws') {
                     // AWS's ES version doesn't have window overflow errors
                     return;
                 }
@@ -85,7 +85,7 @@ describe('elastic source limits', function() {
 
                 return set_window(10)
                 .spread(function(res, body) {
-                    return test_utils.read({id: type});
+                    return test_utils.read({id: mode});
                 })
                 .then(function(result) {
                     var e = 'Tried to read more than 10 points with the same timestamp, increase the max_result_window setting on the relevant indices to read more';
