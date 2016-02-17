@@ -33,6 +33,7 @@ if (mode === 'all') {
 var local_client = Promise.promisifyAll(new Elasticsearch.Client({
     host: 'localhost:9200'
 }));
+Promise.promisifyAll(local_client.indices);
 
 var test_index = 'my_index';
 var has_index_id = 'has_default_index';
@@ -74,6 +75,8 @@ if (_.contains(modes, AWS)) {
         host: AWS_HOST
     }));
 
+    Promise.promisifyAll(aws_client.indices);
+
     config.push({
         id: AWS,
         aws: true,
@@ -93,6 +96,10 @@ if (_.contains(modes, AWS)) {
 var adapter = Elastic(config, Juttle);
 
 Juttle.adapters.register(adapter.name, adapter);
+
+function _client_for_mode(mode) {
+    return mode === 'aws' ? aws_client : local_client;
+}
 
 function _option_is_moment(key) {
     return key === 'from' || key === 'to' || key === 'lag';
@@ -142,18 +149,15 @@ function read(options, extra, deactivateAfter) {
     }, deactivateAfter);
 }
 
-function clear_data(type, indexes) {
+function clear_data(mode, indexes) {
     indexes = indexes || TEST_RUN_ID + '*';
-    if (type === 'aws') {
-        return aws_client.deleteAsync({index: indexes});
-    } else {
-        return local_client.indices.delete({index: indexes});
-    }
+    var client = _client_for_mode(mode);
+    return client.indices.deleteAsync({index: indexes});
 }
 
-function verify_import(points, type, indexes, options) {
+function verify_import(points, mode, indexes, options) {
     options = options || {};
-    var client = type === 'aws' ? aws_client : local_client;
+    var client = _client_for_mode(mode);
     var request_body = {
         index: indexes || TEST_RUN_ID + '*',
         type: '',
@@ -248,8 +252,8 @@ function list_indices() {
         });
 }
 
-function search(type, index) {
-    var client = type === 'aws' ? aws_client : local_client;
+function search(mode, index) {
+    var client = _client_for_mode(mode);
 
     return client.searchAsync({
         index: index || '*',
@@ -335,22 +339,19 @@ function check_no_write(write_promise, read_options) {
         });
 }
 
-function get_mapping(instance_type) {
+function get_mapping(mode) {
     var options = {index: '*', type: ''};
-    if (instance_type === 'aws') {
-        return aws_client.getMappingAsync(options);
-    } else {
-        return local_client.indices.getMapping(options);
-    }
+    var client = _client_for_mode(mode);
+    return client.indices.getMappingAsync(options)
+        .spread(function(response, statusCode) {
+            return response;
+        });
 }
 
-function create_index(instance_type, index) {
+function create_index(mode, index) {
     var options = {index: index};
-    if (instance_type === 'aws') {
-        return aws_client.createIndexAsync(options);
-    } else {
-        return local_client.indices.create(options);
-    }
+    var client = _client_for_mode(mode);
+    return client.indices.createAsync(options);
 }
 
 module.exports = {
