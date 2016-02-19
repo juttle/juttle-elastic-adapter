@@ -3,7 +3,7 @@ var retry = require('bluebird-retry');
 var expect = require('chai').expect;
 var _ = require('underscore');
 var Elasticsearch = require('elasticsearch');
-var AmazonElasticsearchClient = require('aws-es');
+var AmazonElasticsearchClient = require('aws-es2');
 var uuid = require('uuid');
 var util = require('util');
 
