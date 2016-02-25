@@ -4,8 +4,8 @@ var retry = require('bluebird-retry');
 var expect = require('chai').expect;
 var util = require('util');
 
+var juttle_test_utils = require('juttle/test').utils;
 var test_utils = require('./elastic-test-utils');
-var elastic = require('../lib/elastic');
 var points = require('./apache-sample');
 
 function format_juttle_result_like_es(pts) {
@@ -37,9 +37,10 @@ function sortBy() {
 
 var modes = test_utils.modes;
 
-describe('optimization', function() {
+juttle_test_utils.withAdapterAPI(function() {
+    var elastic = require('../lib/elastic');
     modes.forEach(function(type) {
-        describe(type, function() {
+        describe('optimization ' + type, function() {
             after(function() {
                 return test_utils.clear_data(type);
             });
@@ -182,10 +183,10 @@ describe('optimization', function() {
                     return test_utils.read({id: type}, '| reduce count()')
                     .then(function(result) {
                         var first_node = result.prog.graph.head[0];
-                        expect(first_node.procName).equal('read');
+                        expect(first_node.procName()).equal('read-elastic');
 
                         var second_node = first_node.out_.default[0].proc;
-                        expect(second_node.procName).equal('view');
+                        expect(second_node.procName()).equal('view');
 
                         expect(result.sinks.table).deep.equal([{count: 30}]);
                         expect(result.prog.graph.adapter.es_opts.aggregations.count).equal('count');
@@ -196,10 +197,10 @@ describe('optimization', function() {
                     return test_utils.read({id: type}, '| reduce count(clientip)')
                     .then(function(result) {
                         var first_node = result.prog.graph.head[0];
-                        expect(first_node.procName).equal('read');
+                        expect(first_node.procName()).equal('read-elastic');
 
                         var second_node = first_node.out_.default[0].proc;
-                        expect(second_node.procName).equal('view');
+                        expect(second_node.procName()).equal('view');
 
                         expect(result.sinks.table).deep.equal([{count: 30}]);
                         var queries = result.prog.graph.adapter.executed_queries;

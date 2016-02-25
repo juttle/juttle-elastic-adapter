@@ -1,4 +1,5 @@
 var Promise = require('bluebird');
+var path = require('path');
 var retry = require('bluebird-retry');
 var expect = require('chai').expect;
 var _ = require('underscore');
@@ -7,11 +8,10 @@ var AmazonElasticsearchClient = require('aws-es2');
 var uuid = require('uuid');
 var util = require('util');
 
-var Juttle = require('juttle/lib/runtime').Juttle;
-var Elastic = require('../lib');
-var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
+var juttle_test_utils = require('juttle/test').utils;
 
 var check_juttle = juttle_test_utils.check_juttle;
+var configureAdapter = juttle_test_utils.configureAdapter;
 
 var AWS_HOST = 'search-dave-6jy2cskdfaye4ji6gfa6x375ve.us-west-2.es.amazonaws.com';
 var AWS_REGION = 'us-west-2';
@@ -93,9 +93,8 @@ if (_.contains(modes, AWS)) {
     });
 }
 
-var adapter = Elastic(config, Juttle);
-
-Juttle.adapters.register(adapter.name, adapter);
+config.path = path.resolve(__dirname, '..');
+configureAdapter({elastic: config});
 
 function _client_for_mode(mode) {
     return mode === 'aws' ? aws_client : local_client;

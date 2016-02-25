@@ -1,17 +1,18 @@
+
 var _ = require('underscore');
 var retry = require('bluebird-retry');
 var expect = require('chai').expect;
 
-var elastic = require('../lib/elastic');
-var test_utils = require('./elastic-test-utils');
-var juttle_test_utils = require('juttle/test/runtime/specs/juttle-test-utils');
+var juttle_test_utils = require('juttle/test').utils;
 var check_juttle = juttle_test_utils.check_juttle;
 
-var modes = test_utils.modes;
+juttle_test_utils.withAdapterAPI(function() {
+    var elastic = require('../lib/elastic');
+    var test_utils = require('./elastic-test-utils');
+    var modes = test_utils.modes;
 
-describe('write', function() {
     modes.forEach(function(mode) {
-        describe(mode, function() {
+        describe('write ' + mode, function() {
             afterEach(function() {
                 elastic.clear_already_created_indices();
                 return test_utils.clear_data(mode);
