@@ -183,10 +183,10 @@ juttle_test_utils.withAdapterAPI(function() {
                     return test_utils.read({id: type}, '| reduce count()')
                     .then(function(result) {
                         var first_node = result.prog.graph.head[0];
-                        expect(first_node.procName).equal('read');
+                        expect(first_node.procName()).equal('read-elastic');
 
                         var second_node = first_node.out_.default[0].proc;
-                        expect(second_node.procName).equal('view');
+                        expect(second_node.procName()).equal('view');
 
                         expect(result.sinks.table).deep.equal([{count: 30}]);
                         expect(result.prog.graph.adapter.es_opts.aggregations.count).equal('count');
@@ -197,10 +197,10 @@ juttle_test_utils.withAdapterAPI(function() {
                     return test_utils.read({id: type}, '| reduce count(clientip)')
                     .then(function(result) {
                         var first_node = result.prog.graph.head[0];
-                        expect(first_node.procName).equal('read');
+                        expect(first_node.procName()).equal('read-elastic');
 
                         var second_node = first_node.out_.default[0].proc;
-                        expect(second_node.procName).equal('view');
+                        expect(second_node.procName()).equal('view');
 
                         expect(result.sinks.table).deep.equal([{count: 30}]);
                         var queries = result.prog.graph.adapter.executed_queries;
