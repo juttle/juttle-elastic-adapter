@@ -71,6 +71,7 @@ modes.forEach(function(mode) {
         it('optimized reduce by object field', function() {
             return test_utils.read({id: mode}, '| reduce count() by "nest.tag"')
                 .then(function(result) {
+                    expect(result.warnings).deep.equal([]);
                     var counts = _.countBy(points, function(pt) {
                         return pt.nest.tag;
                     });
@@ -82,6 +83,16 @@ modes.forEach(function(mode) {
                     var received = _.sortBy(result.sinks.table, 'nest.tag');
 
                     expect(expected).deep.equal(received);
+                });
+        });
+
+        it('optimized reduce by missing field warns', function() {
+            return test_utils.read({id: mode}, '| reduce count() by "nest.nobody"')
+                .then(function(result) {
+                    var warning = `index "${test_utils.test_id}" has no ` +
+                        `known property "nest.nobody" for type "event"`;
+                    expect(result.warnings).deep.equal([warning]);
+                    expect(result.sinks.table).deep.equal([ { count: 10, 'nest.nobody': null } ]);
                 });
         });
 
