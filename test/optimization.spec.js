@@ -301,6 +301,25 @@ juttle_test_utils.withAdapterAPI(function() {
                     });
                 });
 
+                it('optimizes stdev reducer', function() {
+                    var extra = '| reduce stdev(bytes)';
+                    return test_utils.check_optimization(start, end, type, extra);
+                });
+
+                it('optimizes stdev reducer -every', function() {
+                    var extra = '| reduce -every :s: stdev(bytes)';
+                    return test_utils.check_optimization(start, end, type, extra, {
+                        massage: format_juttle_result_like_es
+                    });
+                });
+
+                it('optimizes non-count reducers -every -on', function() {
+                    var extra = '| reduce -every :s: -on :0.2s: stdev(bytes)';
+                    return test_utils.check_optimization(start, end, type, extra, {
+                        massage: format_juttle_result_like_es
+                    });
+                });
+
                 it('optimizes no reducers', function() {
                     return test_utils.check_optimization(start, end, type, '| reduce by clientip', {
                         massage: sortBy('clientip')
