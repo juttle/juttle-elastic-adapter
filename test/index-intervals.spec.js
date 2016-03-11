@@ -67,7 +67,7 @@ modes.forEach(function(mode) {
                     .then(function(result) {
                         expect(result.errors).deep.equal([]);
                     });
-            }, {concurrency: 10})
+            }, {concurrency: 5})
             .then(function(results) {
                 return test_utils.verify_import(points, mode, index);
             })
