@@ -63,7 +63,7 @@ describe('elastic source limits', function() {
                 .then(function(result) {
                     var expected = _.last(points, 8);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                    expect(result.prog.graph.adapter.es_opts.limit).equal(100000);
+                    expect(result.prog.graph.adapter.es_opts.limit).equal(Infinity);
                 });
             });
 
@@ -94,6 +94,30 @@ describe('elastic source limits', function() {
                 .finally(function() {
                     return set_window(10000);
                 });
+            });
+
+            it('unoptimized tail over multiple fetches', function() {
+                return test_utils.read({id: mode, fetch_size: 2}, ' | tail 8')
+                    .then(function(result) {
+                        var expected = _.last(points, 8);
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                    });
+            });
+
+            it('unoptimized tail with small queueSize', function() {
+                return test_utils.read({id: mode, fetch_size: 3, queueSize: 3, optimize: false}, ' | tail 8')
+                    .then(function(result) {
+                        var expected = _.last(points, 8);
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
+                    });
+            });
+
+            it('queueSize becomes fetchSize when it\'s smaller', function() {
+                return test_utils.read({id: mode, queueSize: 2})
+                    .then(function(result) {
+                        expect(result.prog.graph.adapter.executed_queries[0].size).equal(2);
+                        test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
+                    });
             });
         });
     });
