@@ -146,8 +146,9 @@ function read(options, extra, deactivateAfter) {
 
     return check_juttle({
         program: read_program,
-        realtime: !!deactivateAfter
-    }, deactivateAfter);
+        realtime: !!deactivateAfter,
+        deactivateAfter: deactivateAfter
+    });
 }
 
 function clear_data(mode, indexes) {
