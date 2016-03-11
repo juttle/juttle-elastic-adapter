@@ -193,6 +193,19 @@ juttle_test_utils.withAdapterAPI(function() {
                     });
                 });
 
+                it('gracefully fails if there are no matching indices', function() {
+                    var extra = '| reduce avg(bytes)';
+                    return test_utils.check_optimization(start, end, type, extra, {
+                        index: 'no_such_index'
+                    })
+                    .then(function() {
+                        var grouped_extra = '| reduce avg(bytes) by clientip';
+                        return test_utils.check_optimization(start, end, type, grouped_extra, {
+                            index: 'no_such_index'
+                        });
+                    });
+                });
+
                 it('optimizes count(field)', function() {
                     return test_utils.read({id: type}, '| reduce count(clientip)')
                     .then(function(result) {
