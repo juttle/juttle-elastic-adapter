@@ -67,7 +67,7 @@ modes.forEach(function(mode) {
                     .then(function(result) {
                         expect(result.errors).deep.equal([]);
                     });
-            }, {concurrency: 5})
+            }, {concurrency: 10})
             .then(function(results) {
                 return test_utils.verify_import(points, mode, index);
             })
@@ -94,6 +94,7 @@ modes.forEach(function(mode) {
         }
 
         it('writes and reads with daily indices', function() {
+            this.timeout(120000);
             return check('day');
         });
 
