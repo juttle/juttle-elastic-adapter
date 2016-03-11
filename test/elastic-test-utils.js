@@ -113,6 +113,7 @@ function options_from_object(options) {
 
 function write(points, options, extra) {
     options = options || {};
+    options = _.clone(options);
     options.index = options.index || TEST_RUN_ID;
     extra = extra || '';
 
@@ -134,6 +135,7 @@ var DEFAULT_TEST_READ_OPTIONS = {
 
 function read(options, extra, deactivateAfter) {
     options = options || {};
+    options = _.clone(options);
     _.defaults(options, DEFAULT_TEST_READ_OPTIONS);
     extra = extra || '';
 
@@ -144,8 +146,9 @@ function read(options, extra, deactivateAfter) {
 
     return check_juttle({
         program: read_program,
-        realtime: !!deactivateAfter
-    }, deactivateAfter);
+        realtime: !!deactivateAfter,
+        deactivateAfter: deactivateAfter
+    });
 }
 
 function clear_data(mode, indexes) {

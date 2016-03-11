@@ -27,7 +27,7 @@
     "request": "^2.44.0",
     "underscore": "^1.8.3"
   },
-  "juttleAdapterAPI": "^0.5.0",
+  "juttleAdapterAPI": "^0.5.2",
   "devDependencies": {
     "chai": "^3.4.1",
     "istanbul": "^0.4.2",
