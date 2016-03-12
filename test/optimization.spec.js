@@ -54,7 +54,6 @@ juttle_test_utils.withAdapterAPI(function() {
             });
 
             function expect_graph_has_limit(graph, limit) {
-                expect(graph.adapter.es_opts.limit).equal(limit);
                 expect(graph.adapter.executed_queries[0].size).equal(limit);
             }
 
@@ -107,7 +106,6 @@ juttle_test_utils.withAdapterAPI(function() {
                     return test_utils.read({id: type}, '| head 0')
                     .then(function(result) {
                         expect(result.sinks.table).deep.equal([]);
-                        expect(result.prog.graph.adapter.es_opts.limit).equal(0);
                     });
                 });
             });
@@ -156,7 +154,6 @@ juttle_test_utils.withAdapterAPI(function() {
                     return test_utils.read({id: type}, '| tail 0')
                     .then(function(result) {
                         expect(result.sinks.table).deep.equal([]);
-                        expect(result.prog.graph.adapter.executed_queries.length).equal(0);
                     });
                 });
 

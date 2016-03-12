@@ -40,7 +40,7 @@ describe('elastic source limits', function() {
             });
 
             it('errors if you try to read too many simultaneous points', function() {
-                var extra = '-fetch_size 2 -deep_paging_limit 3';
+                var extra = '-fetchSize 2 -deep_paging_limit 3';
                 return test_utils.read({id: mode}, extra)
                 .then(function(result) {
                     expect(result.errors).deep.equal([ 'Cannot fetch more than 3 points with the same timestamp' ]);
@@ -48,22 +48,22 @@ describe('elastic source limits', function() {
             });
 
             it('enforces head across multiple fetches', function() {
-                var extra = '-fetch_size 2 | head 3';
+                var extra = '-fetchSize 2 | head 3';
                 return test_utils.read({id: mode}, extra)
                 .then(function(result) {
                     var expected = points.slice(0, 3);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                    expect(result.prog.graph.adapter.es_opts.limit).equal(3);
+                    expect(result.prog.graph.adapter.executed_queries[0].size).equal(2);
                 });
             });
 
             it('doesn\'t optimize tail in excess of fetch size', function() {
-                var extra = '-fetch_size 2 | tail 8';
+                var extra = '-fetchSize 2 | tail 8';
                 return test_utils.read({id: mode}, extra)
                 .then(function(result) {
                     var expected = _.last(points, 8);
                     test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
-                    expect(result.prog.graph.adapter.es_opts.limit).equal(Infinity);
+                    expect(result.prog.graph.adapter.executed_queries[0].size).equal(2);
                 });
             });
 
@@ -97,7 +97,7 @@ describe('elastic source limits', function() {
             });
 
             it('unoptimized tail over multiple fetches', function() {
-                return test_utils.read({id: mode, fetch_size: 2}, ' | tail 8')
+                return test_utils.read({id: mode, fetchSize: 2}, ' | tail 8')
                     .then(function(result) {
                         var expected = _.last(points, 8);
                         test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
@@ -105,7 +105,7 @@ describe('elastic source limits', function() {
             });
 
             it('unoptimized tail with small queueSize', function() {
-                return test_utils.read({id: mode, fetch_size: 3, queueSize: 3, optimize: false}, ' | tail 8')
+                return test_utils.read({id: mode, fetchSize: 3, queueSize: 3, optimize: false}, ' | tail 8')
                     .then(function(result) {
                         var expected = _.last(points, 8);
                         test_utils.check_result_vs_expected_sorting_by(result.sinks.table, expected, 'bytes');
