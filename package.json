@@ -17,7 +17,7 @@
     "check-coverage": "node_modules/.bin/istanbul check-coverage"
   },
   "dependencies": {
-    "aws-es2": "^1.0.0",
+    "aws-es2": "^1.1.0",
     "bluebird": "^2.9.30",
     "bluebird-retry": "^0.5.2",
     "concurrency-master": "^0.1.0",

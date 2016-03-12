@@ -90,6 +90,7 @@ modes.forEach(function(mode) {
             })
             .then(function(result) {
                 test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
+                expect(result.prog.graph.adapter.executed_queries[0].indices.indexOf('*')).equal(-1);
             });
         }
 
