@@ -80,6 +80,7 @@ modes.forEach(function(mode) {
                 return test_utils.read({id: mode, from: from, to: to, index: index, indexInterval: interval});
             })
             .then(function(result) {
+                expect(result.warnings).deep.equal([]);
                 test_utils.check_result_vs_expected_sorting_by(result.sinks.table, points, 'bytes');
                 return test_utils.read({id: mode, from: before_any_data, to: from, index: index, indexInterval: interval});
             })
