@@ -350,8 +350,8 @@ function get_mapping(mode) {
         });
 }
 
-function create_index(mode, index) {
-    var options = {index: index};
+function create_index(mode, index, body) {
+    var options = {index: index, body: body};
     var client = _client_for_mode(mode);
     return client.indices.createAsync(options);
 }
