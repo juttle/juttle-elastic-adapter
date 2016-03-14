@@ -3,6 +3,13 @@
 This file documents all notable changes to Juttle Elastic Adapter. The release
 numbering uses [semantic versioning](http://semver.org).
 
+# 0.6.1
+
+Released 2016-03-13
+- fix messy failure when performing an aggregation on a non-existent index [#121](https://github.com/juttle/juttle-elastic-adapter/issues/113)
+- format indices properly when using -indexInterval [#123](https://github.com/juttle/juttle-elastic-adapter/issues/113)
+
+
 ## 0.6.0
 
 Released 2016-03-10
