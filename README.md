@@ -30,6 +30,8 @@ Read recent records from Elasticsearch that contain the text `hello world` in an
 read elastic -last :1 hour: 'hello world'
 ```
 
+An end-to-end example is described [here](https://github.com/juttle/juttle-engine/blob/master/examples/elastic-newstracker/README.md) and deployed to the demo system [demo.juttle.io](http://demo.juttle.io/?path=/examples/elastic-newstracker/index.juttle). The [Juttle Tutorial](http://juttle.github.io/juttle/concepts/juttle_tutorial/) also covers using elastic adapter.
+
 ## Installation
 
 Like Juttle itself, the adapter is installed as a npm package. Both Juttle and
