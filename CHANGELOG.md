@@ -5,10 +5,10 @@ numbering uses [semantic versioning](http://semver.org).
 
 # 0.6.1
 
-Released 2016-03-13
+Released 2016-03-14
 - fix messy failure when performing an aggregation on a non-existent index [#121](https://github.com/juttle/juttle-elastic-adapter/issues/113)
 - format indices properly when using -indexInterval [#123](https://github.com/juttle/juttle-elastic-adapter/issues/113)
-
+- enable unoptimized read of over 100,000 points [#116](https://github.com/juttle/juttle-elastic-adapter/issues/116)
 
 ## 0.6.0
 
