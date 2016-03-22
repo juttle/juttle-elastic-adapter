@@ -441,6 +441,13 @@ juttle_test_utils.withAdapterAPI(function() {
                     return test_utils.check_optimization('10 years ago', 'now', type, extra);
                 });
 
+                it('optimizes reduce -every by with a lot of buckets', function() {
+                    var extra = '| reduce -every :h: count() by clientip';
+                    return test_utils.check_optimization('5 years ago', 'now', type, extra, {
+                        massage: sortBy('clientip')
+                    });
+                });
+
                 it('doesn\'t optimize reduce -acc true', function() {
                     return test_utils.read({from: start, to: end, id: type}, '| reduce -every :s: -acc true by clientip')
                         .then(function(result) {
