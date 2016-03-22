@@ -3,11 +3,23 @@
 This file documents all notable changes to Juttle Elastic Adapter. The release
 numbering uses [semantic versioning](http://semver.org).
 
+# 0.6.2
+
+Released 2016-03-22
+
+### Bug Fixes
+
+- Fix a problem where the groupby key in `reduce -every` was erroneously set to null when there were no points for a given time bucket in the query.
+[#129](https://github.com/juttle/juttle-elastic-adapter/issues/129)
+- Get rid of warnings when using properties such as logstash-created `field.raw` as a group by key in reduce. [#126](https://github.com/juttle/juttle-elastic-adapter/issues/126)
+
 # 0.6.1
 
 Released 2016-03-14
-- fix messy failure when performing an aggregation on a non-existent index [#121](https://github.com/juttle/juttle-elastic-adapter/issues/113)
-- format indices properly when using -indexInterval [#123](https://github.com/juttle/juttle-elastic-adapter/issues/113)
+
+### Bug Fixes
+- fix messy failure when performing an aggregation on a non-existent index [#121](https://github.com/juttle/juttle-elastic-adapter/issues/121)
+- format indices properly when using -indexInterval [#123](https://github.com/juttle/juttle-elastic-adapter/issues/123)
 - enable unoptimized read of over 100,000 points [#116](https://github.com/juttle/juttle-elastic-adapter/issues/116)
 
 ## 0.6.0
