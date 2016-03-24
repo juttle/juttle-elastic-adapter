@@ -237,7 +237,7 @@ juttle_test_utils.withAdapterAPI(function() {
 
             it('rejects regex filters', function() {
                 var failing_read = test_utils.read({id: mode}, 'clientip =~ /2/');
-                var message = 'read elastic filters cannot contain regular expressions';
+                var message = 'Filters do not support regular expressions in this context.';
 
                 return test_utils.expect_to_fail(failing_read, message);
             });
