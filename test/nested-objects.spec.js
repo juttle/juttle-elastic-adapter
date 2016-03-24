@@ -5,6 +5,7 @@ var test_utils = require('./elastic-test-utils');
 var points = test_utils.generate_sample_data({
     tags: {
         nest: [{tag: 'a', arr: ['a']}, {tag: 'b', arr: ['b']}],
+        double_nest: [{tag: {nested_tag: 'a'}, arr: ['a']}, {tag: {nested_tag: 'b'}, arr: ['b']}],
         array: [['a', 'b', 'c'], ['d', 'e', 'f'], ['a', 'e', 'g']]
     }
 });
@@ -32,8 +33,7 @@ modes.forEach(function(mode) {
                 });
         });
 
-        // depends on https://github.com/juttle/juttle/issues/320
-        it.skip('object property access filter', function() {
+        it('object property access filter', function() {
             return test_utils.read({id: mode}, 'nest["tag"] = "a"')
                 .then(function(result) {
                     expect(result.errors).deep.equal([]);
@@ -45,6 +45,17 @@ modes.forEach(function(mode) {
                 });
         });
 
+        it('double object property access filter', function() {
+            return test_utils.read({id: mode}, 'double_nest.tag.nested_tag = "a"')
+                .then(function(result) {
+                    expect(result.errors).deep.equal([]);
+                    var expected = points.filter(function(pt) {
+                        return pt.double_nest.tag.nested_tag === 'a';
+                    });
+
+                    expect(result.sinks.table).deep.equal(expected);
+                });
+        });
         // depends on https://github.com/juttle/juttle/issues/320
         it.skip('object filter', function() {
             return test_utils.read({id: mode}, 'nest = {tag: "a"}')
