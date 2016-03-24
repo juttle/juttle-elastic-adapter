@@ -3,6 +3,14 @@
 This file documents all notable changes to Juttle Elastic Adapter. The release
 numbering uses [semantic versioning](http://semver.org).
 
+# 0.7.0
+
+Released 2016-03-24
+
+### Major Changes
+
+- Update to Juttle 0.7.x, including adding support for filtering on nested fields. [#133](https://github.com/juttle/juttle-elastic-adapter/issues/133)
+
 # 0.6.2
 
 Released 2016-03-22
