@@ -23,7 +23,6 @@
     "concurrency-master": "^0.1.0",
     "current-week-number": "^1.0.7",
     "elasticsearch": "^10.0.1",
-    "extendable-base": "^0.3.1",
     "request": "^2.44.0",
     "underscore": "^1.8.3"
   },
