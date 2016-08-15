@@ -61,6 +61,8 @@ within Juttle. To do so, add the following to your `~/.juttle/config.json` file:
 To connect to an Elasticsearch instance elsewhere, change the `address`
 and `port` in this configuration.
 
+This configuration can also support all config options for the `Client` exclude `hosts`. All of the available options/keys are following [here](https://www.elastic.co/guide/en/elasticsearch/client/javascript-api/current/configuration.html)
+
 The value for `elastic` can also be an array of Elasticsearch host locations. Give each one a unique `id` field, and `read -id` and `write -id` will use the appropriate host.
 
 The Juttle Elastic Adapter can also make requests to Amazon Elasticsearch Service instances, which requires a little more configuration. To connect to Amazon Elasticsearch Service, an entry in the adapter config must have `{"aws": true}` as well as `region`, `endpoint`, `access_key`, and `secret_key` fields. `access_key` and `secret_key` can also be specified by the environment variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` respectively.
